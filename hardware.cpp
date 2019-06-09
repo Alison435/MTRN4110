@@ -68,14 +68,14 @@ static auto hardware::digital_pin<pin>::read () -> logic_level
     {
         // HIGH was read at digital pin
         readLevel = logic_level::high;
-        Serial.println("read pin as HIGH");
+        //Serial.println("read pin as HIGH");
     }
 
     if (digitalRead(pin) == 0)
     {
         // LOW was read at digital pin
         readLevel = logic_level::low;
-        Serial.println("read pin as LOW");
+        //Serial.println("read pin as LOW");
     }
 
     return readLevel;
