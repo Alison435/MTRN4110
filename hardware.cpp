@@ -3,19 +3,13 @@
 #include "units.h"
 #include "hardware_definition.h"
 
-using pin_t = uint8_t; //uint8_t is a byte. (Arduino - mentions need for const unsigned char)
+using pin_t = uint8_t; //uint8_t is a byte
 
 // Have 'hardware::digital_pin::'' as digital_pin is the template class which I am defining
 // the functions for, which is in the namespace of hardware.
 // In Arduino sketch, added 'using namespace hardware' to avoid repetitive scope operator usage
 
 // 1) Implementation of digital_pin Class
-
-    /**
-     * \brief The config_io_mode method set I/O mode to the digital pin.
-     * Should be called to set the correct mode before any I/O activity.
-     * \param mode is the desired I/O mode.
-     */
 
 template <pin_t pin> //works
 static auto hardware::digital_pin<pin>::config_io_mode (io_mode mode) -> void
@@ -54,11 +48,7 @@ static auto hardware::digital_pin<pin>::config_io_mode (io_mode mode) -> void
     }
 }
 
-    /**
-    * \brief The read method returns the current pin input.
-    * \return the input logic level.
-    */
-template <pin_t pin>
+template <pin_t pin> //works
 static auto hardware::digital_pin<pin>::read () -> logic_level
 {
 
@@ -82,10 +72,6 @@ static auto hardware::digital_pin<pin>::read () -> logic_level
 
 }
 
-    /**
-    * \brief The write method set digital pin output to mode.
-    * \param level is the logic level to set the digital pin to.
-    */
 template <pin_t pin>
 static auto hardware::digital_pin<pin>::write (logic_level level) -> void
 {
@@ -101,9 +87,6 @@ static auto hardware::digital_pin<pin>::write (logic_level level) -> void
 
 }
 
-    /**
-    * \brief The high method set digital output level to high.
-    */
 template <pin_t pin> //works
 static auto hardware::digital_pin<pin>::high() -> void
 {
@@ -113,9 +96,6 @@ static auto hardware::digital_pin<pin>::high() -> void
 
 }
 
-    /**
-    * \brief The low method set digital output level to low.
-    */
 template <pin_t pin> //works
 static auto hardware::digital_pin<pin>::low() -> void
 {
@@ -138,6 +118,9 @@ static auto hardware::digital_pin<pin>::pwm_write (units::percentage duty_cycle)
 
 
 
+    //value: the duty cycle: between 0 (always off) and 255 (always on). Allowed data types: int.
+    analogWrite(pin,duty_cycle);
+
 }
 
     //
@@ -158,11 +141,136 @@ units::microseconds timeout = 1000000_us) -> units::microseconds
 
 }
 
+// 2) Implementation of analog_pin Class
+
+    /**
+     * \brief The set_analog_reference method set the reference voltage for
+     * analog read.
+     * \param ref is the analog reference.
+     */
+template <typename base>
+static auto hardware::analog_pin<base>::set_analog_reference (analog_reference ref) -> void
+{
+     switch (ref)
+    {
+
+        case (analog_reference::vcc_default):
+        {
+            analogReference(DEFAULT);
+            break;
+        }
+
+        case (analog_reference::internal_1v1):
+        {
+            analogReference(INTERNAL1V1);
+            break;
+        }
+
+        case (analog_reference::internal):
+        {
+            analogReference(INTERNAL);
+            break;
+        }
+
+        case (analog_reference::internal_2v56):
+        {
+            analogReference(INTERNAL2V56);
+            break;
+        }
+
+        case (analog_reference::external):
+        {
+            analogReference(EXTERNAL);
+            break;
+        }
+
+        default:
+            break;
+
+    }
+}
+
+    /**
+     * \brief The analog_read method analog input.
+     * \return voltage in volts.
+     */
+template <typename base>
+static auto hardware::analog_pin<base>::analog_read () -> units::volts
+{
+
+    units::volts analogVoltage;
+    analog_reference aRef;
+
+    using analog_io = hardware::analog_pin<base>;
+
+    analogVoltage = (analogRead(pin) * aRef) / analog_io::conversion_unit;
+
+    return analogVoltage;
+
+}
+
+// 3) Implementation of motor Class
+
+/**
+ * \brief The motor represents one motor channel of the motor driver. See motor
+ * driver data sheets for digital output combination to control the direction of
+ * motor. \tparam pin_a is direction pin a \tparam pin_b is direction pin b
+ */
+
+/*
+enum class drive_direction : uint8_t
+{
+    unknown,
+    forward,
+    backward
+};
+*/
+
+    /**
+     * \brief The enable method enables motor control pins.
+     */
+template <class pin_a, class pin_b>
+static auto hardware::motor<pin_a,pin_b>::enable () -> void
+{
+
+
+}
+
+    /**
+     * \brief The stop method stops the motor
+     */
+template <class pin_a, class pin_b>
+static auto hardware::motor<pin_a,pin_b>::stop () -> void
+{
+
+
+}
+
+    /**
+     * \brief The forward method makes the motor goes forward.
+     * \param velocity is percentage of maximum speed of motor.
+     */
+template <class pin_a, class pin_b>
+static auto hardware::motor<pin_a,pin_b>::forward (units::percentage velocity) -> void
+{
+
+
+}
+
+    /**
+     * \brief The forward method makes the motor goes backward.
+     * \param velocity is percentage of maximum speed of motor.
+     */
+template <class pin_a, class pin_b>
+static auto hardware::motor<pin_a,pin_b>::backward (units::percentage velocity) -> void
+{
+
+
+}
+
 // ---------------TODO: Jono-------------------
 
-// 2) Implementation of analog_pin Class
-// 3) Implementation of motor Class
-// 4) Implementation of encoder Class
+// 4) Implementation of encoder Class {awaiting physical parts for testing but will start code soon}
 // 5) Implementation of wheel Class
 
 // ---------------TODO: Jono-------------------
@@ -171,6 +279,25 @@ units::microseconds timeout = 1000000_us) -> units::microseconds
 // Template was split into .cpp and .h file. Compiler now knows that it will
 // compile the .cpp for the classes using the specified pins
 
+// Pins for LEDs
 template class hardware::digital_pin<13U>; //need to ask why using led = digital_pin<13U> doesn't work here!
 template class hardware::digital_pin<8U>;
-template class hardware::digital_pin<7U>;
+template class hardware::digital_pin<3U>; //LED fade test pin
+
+// Pins for Motor (H-bridge)
+// within namespace pins
+//template class hardware::pins::digital_pin<2U>; //channel 1 direction
+//template class hardware::pins::digital_pin<3U>; //channel 1 speed
+//template class hardware::pins::digital_pin<4U>; //channel 2 direction
+//template class hardware::pins::digital_pin<5U>; //channel 2 speed
+
+// these are in namespace hardware
+/**
+ * \brief The left_motor bind left motor to the correct pins.
+ */
+//using right_motor = motor<pins::in1, pins::in2>;
+
+/**
+ * \brief The right_motor bind right motor to the correct pins.
+ */
+//using left_motor = motor<pins::in3, pins::in4>;
