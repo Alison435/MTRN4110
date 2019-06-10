@@ -30,17 +30,15 @@ namespace hardware
 
         // 2) Pins for Motor/Encoder
 
-        // The in1 is motor drive channel 1 direction #1
+       // Right Motor (Direction and Speed)
         using in1 = digital_pin<2U>;
+        using in2 = digital_pin<4U>;
+        using en1 = digital_pin<3U>;
 
-        // The in2 is motor drive channel 1 direction #2
-        using in2 = digital_pin<3U>;
-
-        // The in3 is motor drive channel 2 direction #1
-        using in3 = digital_pin<4U>;
-
-        // The in4 is motor drive channel 2 direction #2
-        using in4 = digital_pin<5U>;
+        // Left Motor (Direction and Speed)
+        using in3 = digital_pin<9U>;
+        using in4 = digital_pin<10U>;
+        using en2 = digital_pin<12U>;
 
         using left_encoder_a = interrupt<digital_pin<8U>>;
         using left_encoder_b = digital_pin<9U>;
@@ -58,7 +56,7 @@ using led = digital_pin<13U>;
 using statusRed = digital_pin<8U>;
 
 // Green LED
-using statusGreen = digital_pin<3U>;
+using statusGreen = digital_pin<9U>;
 
 // 2. Pins for Encoder, Motor and Wheel
 
