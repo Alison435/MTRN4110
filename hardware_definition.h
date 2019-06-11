@@ -58,15 +58,11 @@ constexpr auto left_lidar_address = 0x22;
 constexpr auto right_lidar_address = 0x42;
 }    // namespace pins
 
-// Onboard LED (debugging)
+/**
+ * \brief The led is on board led pin
+ */
 using led = digital_pin<13U>;
 
-// Red LED
-using statusRed = digital_pin<8U>;
-
-// Green LED
-using statusGreen = digital_pin<7U>;
-  
 using left_encoder = encoder<pins::left_encoder_a, pins::left_encoder_b>;
 using left_wheel = wheel<pins::left_encoder_a, pins::left_encoder_b>;
 
