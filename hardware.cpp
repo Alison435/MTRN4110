@@ -7,7 +7,9 @@
 
 /* QUESTIONS FOR TUTOR!!!!!!!!!!!!
 
- //QUESTION TO TUTOR FOR ALL PORTS OR JUST 1 ? SERIAL SERIAL1 SERIAL2 SERIAL3
+ //QUESTION TO TUTOR FOR ALL PORTS OR JUST 1 ? SERIAL SERIAL1 SERIAL2 SERIAL3\
+
+ DO for 1 and 0 as like the serial tag
 
  //How to like LCD
 
@@ -15,7 +17,7 @@
 
 */
 ////////////////////
-//SERIAL & BLUETOOTH
+//SERIAL 0 & BLUETOOTH 1
 ////////////////////
 
 /**
@@ -25,8 +27,14 @@
 	 */
 template <typename tag>
 auto hardware::serial_api<tag>::print(char const* string) -> char_count {
-	char_count NumBytes = Serial.print(string);
-	return NumBytes;
+	if (tag == 0) { //Serial
+		char_count NumBytes = Serial.print(string);
+		return NumBytes;
+	}
+	else if (tag == 1) { //Bluetooth
+		char_count NumBytes = Serial1.print(string);
+		return NumBytes;
+	}
 }
 
 /*
@@ -36,8 +44,14 @@ auto hardware::serial_api<tag>::print(char const* string) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print(char c) -> char_count {
-	char_count NumBytes = Serial.print(c);
-	return NumBytes; 
+	if (tag == 0) {
+		char_count NumBytes = Serial.print(c);
+		return NumBytes;
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.print(c);
+		return NumBytes;
+	}
 }
 
 /**
@@ -48,21 +62,42 @@ auto hardware::serial_api<tag>::print(char c) -> char_count {
 */
 template <typename tag>
 auto hardware::serial_api<tag>::print(int i, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.print(i, BIN);
-		return NumBytes;
-	} else if(base == 6) {
-		char_count NumBytes = Serial.print(i, HEX);
-		return NumBytes;
-	} else if(base == 8) {
-		char_count NumBytes = Serial.print(i, OCT);
-		return NumBytes;
-	} else if(base == 10) {
-		char_count NumBytes = Serial.print(i, DEC);
-		return NumBytes;
+
+	if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial.print(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.print(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.print(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.print(i, DEC);
+			return NumBytes;
+		}
 	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.print(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.print(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.print(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.print(i, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -74,24 +109,41 @@ auto hardware::serial_api<tag>::print(int i, int base = 10) -> char_count {
 */
 template <typename tag>
 auto hardware::serial_api<tag>::print(unsigned int i, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.print(i, BIN);
-		return NumBytes;
+	if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial.print(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.print(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.print(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.print(i, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.print(i, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.print(i, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.print(i, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.print(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.print(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.print(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.print(i, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -104,24 +156,41 @@ auto hardware::serial_api<tag>::print(unsigned int i, int base = 10) -> char_cou
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print(long i, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.print(i, BIN);
-		return NumBytes;
+	if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial.print(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.print(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.print(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.print(i, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.print(i, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.print(i, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.print(i, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.print(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.print(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.print(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.print(i, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -133,24 +202,41 @@ auto hardware::serial_api<tag>::print(long i, int base = 10) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print(unsigned long i, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.print(i, BIN);
-		return NumBytes;
+	if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial.print(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.print(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.print(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.print(i, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.print(i, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.print(i, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.print(i, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.print(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.print(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.print(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.print(i, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -162,24 +248,41 @@ auto hardware::serial_api<tag>::print(unsigned long i, int base = 10) -> char_co
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print(unsigned char c, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.print((uint8_t)c, BIN);
-		return NumBytes;
+	if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial.print((uint8_t)c, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.print((uint8_t)c, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.print((uint8_t)c, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.print((uint8_t)c, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.print((uint8_t)c, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.print((uint8_t)c, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.print((uint8_t)c, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.print((uint8_t)c, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.print((uint8_t)c, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.print((uint8_t)c, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.print((uint8_t)c, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -199,7 +302,12 @@ auto hardware::serial_api<tag>::print(double i, int base = 2) -> char_count {
 		frac = (i - int(i)) * precision;
 	else
 		frac = (int(i) - i) * precision;
-	char_count NumBytes =  Serial.print(frac, DEC);
+	if (tag == 0) {
+		char_count NumBytes = Serial.print(frac, DEC);
+	}
+	else if (tag == 0) {
+		char_count NumBytes = Serial1.print(frac, DEC);
+	}
 	return NumBytes;
 }
 
@@ -210,7 +318,12 @@ auto hardware::serial_api<tag>::print(double i, int base = 2) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(char const* string) -> char_count {
-	char_count NumBytes = Serial.println(string);
+	if (tag == 0) {
+		char_count NumBytes = Serial.println(string);
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.println(string);
+	}
 	return NumBytes;
 }
 
@@ -221,7 +334,12 @@ auto hardware::serial_api<tag>::print_line(char const* string) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(char c) -> char_count {
-	char_count NumBytes = Serial.print(c);
+	if (tag == 0) {
+		char_count NumBytes = Serial.print(c);
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.print(c);
+	}
 	return NumBytes;
 }
 
@@ -234,24 +352,41 @@ auto hardware::serial_api<tag>::print_line(char c) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(int i, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.println(i, BIN);
-		return NumBytes;
+	if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial.println(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.println(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.println(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.println(i, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.println(i, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.println(i, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.println(i, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.println(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.println(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.println(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.println(i, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -264,24 +399,41 @@ auto hardware::serial_api<tag>::print_line(int i, int base = 10) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(unsigned int i, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.println(i, BIN);
-		return NumBytes;
+	if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial.println(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.println(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.println(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.println(i, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.println(i, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.println(i, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.println(i, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.println(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.println(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.println(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.println(i, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -294,24 +446,41 @@ auto hardware::serial_api<tag>::print_line(unsigned int i, int base = 10) -> cha
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(long i, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.println(i, BIN);
-		return NumBytes;
+	if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial.println(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.println(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.println(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.println(i, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.println(i, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.println(i, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.println(i, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.println(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.println(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.println(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.println(i, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -324,24 +493,41 @@ auto hardware::serial_api<tag>::print_line(long i, int base = 10) -> char_count 
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(unsigned long i, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.println(i, BIN);
-		return NumBytes;
+	if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial.println(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.println(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.println(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.println(i, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.println(i, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.println(i, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.println(i, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.println(i, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.println(i, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.println(i, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.println(i, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -354,24 +540,41 @@ auto hardware::serial_api<tag>::print_line(unsigned long i, int base = 10) -> ch
  */
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(unsigned char c, int base = 10) -> char_count {
-	if (base == 2) {
-		char_count NumBytes = Serial.println((uint8_t)c, BIN);
-		return NumBytes;
+	if (tag == 0) {
+		if (base == 2) {
+			char_count NumBytes = Serial.println((uint8_t)c, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial.println((uint8_t)c, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial.println((uint8_t)c, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial.println((uint8_t)c, DEC);
+			return NumBytes;
+		}
 	}
-	else if (base == 6) {
-		char_count NumBytes = Serial.println((uint8_t)c, HEX);
-		return NumBytes;
-	}
-	else if (base == 8) {
-		char_count NumBytes = Serial.println((uint8_t)c, OCT);
-		return NumBytes;
-	}
-	else if (base == 10) {
-		char_count NumBytes = Serial.println((uint8_t)c, DEC);
-		return NumBytes;
-	}
-	else {
-		Serial.print("Unrecognised input.  Base must be 2,6,8,10");
+	else if (tag == 1) {
+		if (base == 2) {
+			char_count NumBytes = Serial1.println((uint8_t)c, BIN);
+			return NumBytes;
+		}
+		else if (base == 6) {
+			char_count NumBytes = Serial1.println((uint8_t)c, HEX);
+			return NumBytes;
+		}
+		else if (base == 8) {
+			char_count NumBytes = Serial1.println((uint8_t)c, OCT);
+			return NumBytes;
+		}
+		else if (base == 10) {
+			char_count NumBytes = Serial1.println((uint8_t)c, DEC);
+			return NumBytes;
+		}
 	}
 }
 
@@ -392,7 +595,12 @@ auto hardware::serial_api<tag>::print_line(double i, int base = 2) -> char_count
 		frac = (i - int(i)) * precision;
 	else
 		frac = (int(i) - i) * precision;
-	char_count NumBytes = Serial.println(frac, DEC);
+	if (tag == 0) {
+		char_count NumBytes = Serial.println(frac, DEC);
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.println(frac, DEC);
+	}
 	return NumBytes;
 }
 
@@ -403,7 +611,12 @@ auto hardware::serial_api<tag>::print_line(double i, int base = 2) -> char_count
 	 */
 template <typename tag>
 auto hardware::serial_api<tag>::write(unsigned long n) -> char_count {
-	char_count NumBytes = Serial.write(n);
+	if (tag == 0) {
+		char_count NumBytes = Serial.write(n);
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.write(n);
+	}
 	return NumBytes;
 }
 
@@ -425,7 +638,12 @@ auto hardware::serial_api<tag>::write(long n) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::write(int n) -> char_count {
-	char_count NumBytes = Serial.write(n);
+	if (tag == 0) {
+		char_count NumBytes = Serial.write(n);
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.write(n);
+	}
 	return NumBytes;
 }
 
@@ -436,7 +654,12 @@ auto hardware::serial_api<tag>::write(int n) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::write(uint8_t n) -> char_count {
-	char_count NumBytes = Serial.write(n);
+	if (tag == 0) {
+		char_count NumBytes = Serial.write(n);
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.write(n);
+	}
 	return NumBytes;
 }
 
@@ -447,7 +670,12 @@ auto hardware::serial_api<tag>::write(uint8_t n) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::write(const char* str) -> char_count {
-	char_count NumBytes = Serial.write(str);
+	if (tag == 0) {
+		char_count NumBytes = Serial.write(str);
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.write(str);
+	}
 	return NumBytes;
 }
 
@@ -459,7 +687,12 @@ auto hardware::serial_api<tag>::write(const char* str) -> char_count {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::write(char const* string, size_t size) -> char_count {
-	char_count NumBytes = Serial.write(string, size);
+	if (tag == 0) {
+		char_count NumBytes = Serial.write(string, size);
+	}
+	else if (tag == 1) {
+		char_count NumBytes = Serial1.write(string, size);
+	}
 	return NumBytes;
 }
 
@@ -470,7 +703,12 @@ auto hardware::serial_api<tag>::write(char const* string, size_t size) -> char_c
  */
 template <typename tag>
 auto hardware::serial_api<tag>::enable(unsigned long baud = 115200) -> void {
-	Serial.begin(baud);
+	if (tag == 0) {
+		Serial.begin(baud);
+	}
+	else if (tag == 1) {
+		Serial1.begin(baud);
+	}
 }
 
 /**
@@ -478,7 +716,12 @@ auto hardware::serial_api<tag>::enable(unsigned long baud = 115200) -> void {
  */
 template <typename tag>
  auto hardware::serial_api<tag>::end() -> void {
-	 Serial.end();
+	 if (tag == 0) {
+		 Serial.end();
+	 }
+	 else if (tag == 1) {
+		 Serial1.end();
+	 }
 }
 
 /**
@@ -488,7 +731,12 @@ template <typename tag>
 template <typename tag>
 auto hardware::serial_api<tag>::input_byte_in_buffer() -> int {
 	//Get the number of bytes (characters) available for reading from the serial port.
-	int NumBytesRead = Serial.available();
+	if (tag == 0) {
+		int NumBytesRead = Serial.available();
+	}
+	else if (tag == 1) {
+		int NumBytesRead = Serial1.available();
+	}
 	return NumBytesRead;
 }
 
@@ -501,7 +749,12 @@ auto hardware::serial_api<tag>::input_byte_in_buffer() -> int {
 template <typename tag>
 auto hardware::serial_api<tag>::output_buffer_space() -> int {
 	//Get the number of bytes (characters) available for writing in the serial buffer without blocking the write operation.
-	int NumBytesAvaliable = Serial.availableForWrite();
+	if (tag == 0) {
+		int NumBytesAvaliable = Serial.availableForWrite();
+	}
+	else if (tag == 1) {
+		int NumBytesAvaliable = Serial1.availableForWrite();
+	}
 	return NumBytesAvaliable;
 }
 
@@ -512,7 +765,12 @@ auto hardware::serial_api<tag>::output_buffer_space() -> int {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::peek() -> int {
-	int NextByte = Serial.peek();
+	if (tag == 0) {
+		int NextByte = Serial.peek();
+	}
+	else if (tag == 1) {
+		int NextByte = Serial1.peek();
+	}
 	return NextByte;
 }
 
@@ -522,7 +780,12 @@ auto hardware::serial_api<tag>::peek() -> int {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::read() -> int {
-	int NextByte = Serial.read();
+	if (tag == 0) {
+		int NextByte = Serial.read();
+	}
+	else if (tag == 1) {
+		int NextByte = Serial1.read();
+	}
 	return NextByte;
 }
 
@@ -536,7 +799,12 @@ auto hardware::serial_api<tag>::read() -> int {
 template <typename tag>
 auto hardware::serial_api<tag>::read_bytes(char* buffer, char_count length) -> char_count {
 	//reads characters from the serial port into a buffer
-	char_count ReadBytes = Serial.readBytes(buffer, length);
+	if (tag == 0) {
+		char_count ReadBytes = Serial.readBytes(buffer, length);
+	}
+	else if (tag == 1) {
+		char_count ReadBytes = Serial1.readBytes(buffer, length);
+	}
 	return ReadBytes;
 }
 
@@ -551,7 +819,12 @@ auto hardware::serial_api<tag>::read_bytes(char* buffer, char_count length) -> c
 template <typename tag>
 auto hardware::serial_api<tag>::read_bytes_until(char terminator, char* buffer, char_count length)->char_count {
 	//reads characters from the serial buffer into an array
-	char_count ReadBytes = Serial.readBytesUntil(terminator, buffer, length);
+	if (tag == 0) {
+		char_count ReadBytes = Serial.readBytesUntil(terminator, buffer, length);
+	}
+	else if (tag == 1) {
+		char_count ReadBytes = Serial1.readBytesUntil(terminator, buffer, length);
+	}
 	return ReadBytes;
 }
 
@@ -562,7 +835,12 @@ auto hardware::serial_api<tag>::read_bytes_until(char terminator, char* buffer, 
  */
 template <typename tag>
 auto hardware::serial_api<tag>::timeout_duration(units::milliseconds timeout) -> void {
-	Serial.setTimeout(timeout);
+	if (tag == 0) {
+		Serial.setTimeout(timeout);
+	}
+	else if (tag == 1) {
+		Serial1.setTimeout(timeout);
+	}
 }
 
 /**
@@ -572,7 +850,12 @@ auto hardware::serial_api<tag>::timeout_duration(units::milliseconds timeout) ->
 template <typename tag>
 auto hardware::serial_api<tag>::flush() -> void {
 	//Waits for the transmission of outgoing serial data to complete
-	Serial.flush();
+	if (tag == 0) {
+		Serial.flush();
+	}
+	else if (tag == 1) {
+		Serial1.flush();
+	}
 }
 
 /**
@@ -581,7 +864,12 @@ auto hardware::serial_api<tag>::flush() -> void {
  */
 template <typename tag>
 auto hardware::serial_api<tag>::clear() -> void {
-	Serial.print("Command line cleared");
+	if (tag == 0) {
+		Serial.print("Command line cleared");
+	}
+	else if (tag == 1) {
+		Serial1.print("Command line cleared");
+	}
 	system("CLS");
 }
 
