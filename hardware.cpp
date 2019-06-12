@@ -276,28 +276,18 @@ static auto hardware::motor<pin_a,pin_b>::backward (units::percentage velocity) 
 // ---------------TODO: Jono-------------------
 
 // NOTE: Explicit Instantiation of Template Classes...
-// Template was split into .cpp and .h file. Compiler now knows that it will
-// compile the .cpp for the classes using the specified pins
 
-// Pins for LEDs
-template class hardware::digital_pin<13U>; //need to ask why using led = digital_pin<13U> doesn't work here!
+// Digital/Analog I/O
+
+template class hardware::digital_pin<13U>;
 template class hardware::digital_pin<8U>;
-template class hardware::digital_pin<3U>; //LED fade test pin
+template class hardware::digital_pin<6U>; //LED fade test pin
+template class hardware::analog_pin<hardware::digital_pin<1U>>; //for analog test
 
-// Pins for Motor (H-bridge)
-// within namespace pins
-//template class hardware::pins::digital_pin<2U>; //channel 1 direction
-//template class hardware::pins::digital_pin<3U>; //channel 1 speed
-//template class hardware::pins::digital_pin<4U>; //channel 2 direction
-//template class hardware::pins::digital_pin<5U>; //channel 2 speed
+// Motor Driver (H-bridge)
 
-// these are in namespace hardware
-/**
- * \brief The left_motor bind left motor to the correct pins.
- */
-//using right_motor = motor<pins::in1, pins::in2>;
+template class hardware::motor<hardware::pins::in1, hardware::pins::in2>; //Pins 2,4
+template class hardware::motor<hardware::pins::in3, hardware::pins::in4>;  //Pins 9,10
 
-/**
- * \brief The right_motor bind right motor to the correct pins.
- */
-//using left_motor = motor<pins::in3, pins::in4>;
+// Encoder
+
