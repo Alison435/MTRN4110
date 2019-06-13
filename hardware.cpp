@@ -4,6 +4,7 @@
 #include "hardware_definition.h"
 #include "Wire.h"
 #include "external_DFRobot_LCD.h"
+#include "type_traits.h"
 
 /* QUESTIONS FOR TUTOR!!!!!!!!!!!!
 
@@ -17,31 +18,38 @@
 
 */
 ////////////////////
-//SERIAL 0 & BLUETOOTH 1
+//SERIAL & BLUETOOTH
+//Serial = Port 0
+//Bluetooth = Port 1 
 ////////////////////
 
 /**
 	 * \brief Print a string to serial as is.
 	 * \param string is a null terminated string.
 	 * \return total number of bytes written.
-	 */
+	 
 template <typename tag>
 auto hardware::serial_api<tag>::print(char const* string) -> char_count {
-	if (tag == 0) { //Serial
-		char_count NumBytes = Serial.print(string);
+	if (check_tag<tag, uint8_t, serial_tag>::value == true) {
+		char_count NumBytes = Serial.print(string); //Port 0
+		Serial.print("a");
 		return NumBytes;
 	}
-	else if (tag == 1) { //Bluetooth
-		char_count NumBytes = Serial1.print(string);
+	
+	else if (check_tag<tag, uint8_t, serial_tag>::value == false) {
+		char_count NumBytes = Serial1.print(string); //Port 1
+		Serial.print("b");
 		return NumBytes;
 	}
+	
 }
 
+*/
 /*
  * \brief Print a character to serial as is.
  * \param c is the character to print.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print(char c) -> char_count {
 	if (tag == 0) {
@@ -59,7 +67,7 @@ auto hardware::serial_api<tag>::print(char c) -> char_count {
 	 * \param i is the value to be printed.
 	 * \param base is the number base to use. Can be 2,6,8,10.
 	 * \return total number of bytes written.
-*/
+
 template <typename tag>
 auto hardware::serial_api<tag>::print(int i, int base = 10) -> char_count {
 
@@ -106,7 +114,7 @@ auto hardware::serial_api<tag>::print(int i, int base = 10) -> char_count {
 	 * \param i is the value to be printed.
 	 * \param base is the number base to use. Can be 2,6,8,10.
 	 * \return total number of bytes written.
-*/
+
 template <typename tag>
 auto hardware::serial_api<tag>::print(unsigned int i, int base = 10) -> char_count {
 	if (tag == 0) {
@@ -153,7 +161,7 @@ auto hardware::serial_api<tag>::print(unsigned int i, int base = 10) -> char_cou
  * \param i is the value to be printed.
  * \param base is the number base to use. Can be 2,6,8,10.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print(long i, int base = 10) -> char_count {
 	if (tag == 0) {
@@ -199,7 +207,7 @@ auto hardware::serial_api<tag>::print(long i, int base = 10) -> char_count {
  * \param i is the value to be printed.
  * \param base is the number base to use. Can be 2,6,8,10.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print(unsigned long i, int base = 10) -> char_count {
 	if (tag == 0) {
@@ -245,7 +253,7 @@ auto hardware::serial_api<tag>::print(unsigned long i, int base = 10) -> char_co
  * \param c is the value to be printed.
  * \param base is the number base to use. Can be 2,6,8,10.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print(unsigned char c, int base = 10) -> char_count {
 	if (tag == 1) {
@@ -291,7 +299,7 @@ auto hardware::serial_api<tag>::print(unsigned char c, int base = 10) -> char_co
  * \param i is the value to be printed.
  * \param base number of decimal place to print to. //meaning 2dp
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print(double i, int base = 2) -> char_count {
 	double precision = pow(10, base);
@@ -315,7 +323,7 @@ auto hardware::serial_api<tag>::print(double i, int base = 2) -> char_count {
  * \brief Print a string to serial followed by return character.
  * \param string is a null terminated string.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(char const* string) -> char_count {
 	if (tag == 0) {
@@ -331,7 +339,7 @@ auto hardware::serial_api<tag>::print_line(char const* string) -> char_count {
  * \brief Print a character to serial as is followed by return character.
  * \param c is the character to print.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(char c) -> char_count {
 	if (tag == 0) {
@@ -349,7 +357,7 @@ auto hardware::serial_api<tag>::print_line(char c) -> char_count {
  * \param i is the value to be printed.
  * \param base is the number base to use. Can be 2,6,8,10.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(int i, int base = 10) -> char_count {
 	if (tag == 0) {
@@ -396,7 +404,7 @@ auto hardware::serial_api<tag>::print_line(int i, int base = 10) -> char_count {
  * \param i is the value to be printed.
  * \param base is the number base to use. Can be 2,6,8,10.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(unsigned int i, int base = 10) -> char_count {
 	if (tag == 0) {
@@ -443,7 +451,7 @@ auto hardware::serial_api<tag>::print_line(unsigned int i, int base = 10) -> cha
  * \param i is the value to be printed.
  * \param base is the number base to use. Can be 2,6,8,10.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(long i, int base = 10) -> char_count {
 	if (tag == 0) {
@@ -490,7 +498,7 @@ auto hardware::serial_api<tag>::print_line(long i, int base = 10) -> char_count 
  * \param i is the value to be printed.
  * \param base is the number base to use. Can be 2,6,8,10.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(unsigned long i, int base = 10) -> char_count {
 	if (tag == 0) {
@@ -537,7 +545,7 @@ auto hardware::serial_api<tag>::print_line(unsigned long i, int base = 10) -> ch
  * \param c is the value to be printed.
  * \param base is the number base to use. Can be 2,6,8,10.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(unsigned char c, int base = 10) -> char_count {
 	if (tag == 0) {
@@ -584,7 +592,7 @@ auto hardware::serial_api<tag>::print_line(unsigned char c, int base = 10) -> ch
  * \param i is the value to be printed.
  * \param base number of decimal place to print to.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::print_line(double i, int base = 2) -> char_count {
 	double precision = pow(10, base);
@@ -608,7 +616,7 @@ auto hardware::serial_api<tag>::print_line(double i, int base = 2) -> char_count
 	 * \brief write a unsigned long int to serial as a series of bytes.
 	 * \param n is the value.
 	 * \return total number of bytes written.
-	 */
+	 
 template <typename tag>
 auto hardware::serial_api<tag>::write(unsigned long n) -> char_count {
 	if (tag == 0) {
@@ -624,7 +632,7 @@ auto hardware::serial_api<tag>::write(unsigned long n) -> char_count {
 	 * \brief write a signed long int to serial as a series of bytes.
 	 * \param n is the value.
 	 * \return total number of bytes written.
-	 */
+	 
 template <typename tag>
 auto hardware::serial_api<tag>::write(long n) -> char_count {
 	char_count NumBytes = Serial.write(n);
@@ -635,7 +643,7 @@ auto hardware::serial_api<tag>::write(long n) -> char_count {
  * \brief write a int to serial as a series of bytes.
  * \param n is the value.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::write(int n) -> char_count {
 	if (tag == 0) {
@@ -651,7 +659,7 @@ auto hardware::serial_api<tag>::write(int n) -> char_count {
  * \brief write a unsigned byte to serial.
  * \param n is the value.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::write(uint8_t n) -> char_count {
 	if (tag == 0) {
@@ -667,7 +675,7 @@ auto hardware::serial_api<tag>::write(uint8_t n) -> char_count {
  * \brief write a string to serial as a series of byte.
  * \param str is a null terminated string.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::write(const char* str) -> char_count {
 	if (tag == 0) {
@@ -684,7 +692,7 @@ auto hardware::serial_api<tag>::write(const char* str) -> char_count {
  * \param string is an array of char.
  * \param size is number of bytes to send.
  * \return total number of bytes written.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::write(char const* string, size_t size) -> char_count {
 	if (tag == 0) {
@@ -700,7 +708,7 @@ auto hardware::serial_api<tag>::write(char const* string, size_t size) -> char_c
  * \brief The begin method set the data rate of hardware serial connection
  * and start communication.
  * \param baud in bits per seconds. Common values include 9600,38400,115200,
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::enable(unsigned long baud = 115200) -> void {
 	if (tag == 0) {
@@ -713,7 +721,7 @@ auto hardware::serial_api<tag>::enable(unsigned long baud = 115200) -> void {
 
 /**
  * \brief The end method stop serial communication.
- */
+ 
 template <typename tag>
  auto hardware::serial_api<tag>::end() -> void {
 	 if (tag == 0) {
@@ -727,7 +735,7 @@ template <typename tag>
 /**
  * \brief The available method returns number of bytes available for read.
  * \return number of bytes available to read.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::input_byte_in_buffer() -> int {
 	//Get the number of bytes (characters) available for reading from the serial port.
@@ -745,7 +753,7 @@ auto hardware::serial_api<tag>::input_byte_in_buffer() -> int {
  * available for write without blocking operation. Essentially the amount of
  * space left in the buffer.
  * \return number of bytes.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::output_buffer_space() -> int {
 	//Get the number of bytes (characters) available for writing in the serial buffer without blocking the write operation.
@@ -762,7 +770,7 @@ auto hardware::serial_api<tag>::output_buffer_space() -> int {
  * \brief The peek method returns the next byte in the stream without
  * removing it from the internal buffer.
  * \return the next byte
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::peek() -> int {
 	if (tag == 0) {
@@ -777,7 +785,7 @@ auto hardware::serial_api<tag>::peek() -> int {
 /**
  * \brief The read method return the next character from stream.
  * \return the next byte
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::read() -> int {
 	if (tag == 0) {
@@ -795,7 +803,7 @@ auto hardware::serial_api<tag>::read() -> int {
  * \param buffer is a pointer to the return buffer.
  * \param length is the maximum number of bytes to read.
  * \return number of character read.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::read_bytes(char* buffer, char_count length) -> char_count {
 	//reads characters from the serial port into a buffer
@@ -815,7 +823,7 @@ auto hardware::serial_api<tag>::read_bytes(char* buffer, char_count length) -> c
  * \param buffer is a pointer to the return buffer.
  * \param length is the maximum number of bytes to read.
  * \return number of bytes read, not including terminator.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::read_bytes_until(char terminator, char* buffer, char_count length)->char_count {
 	//reads characters from the serial buffer into an array
@@ -832,7 +840,7 @@ auto hardware::serial_api<tag>::read_bytes_until(char terminator, char* buffer, 
  * \brief The timeout_duration method sets the maximum milliseconds to wait
  * for serial data.
  * \param timeout in milliseconds.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::timeout_duration(units::milliseconds timeout) -> void {
 	if (tag == 0) {
@@ -846,7 +854,7 @@ auto hardware::serial_api<tag>::timeout_duration(units::milliseconds timeout) ->
 /**
  * \brief The flush method wait until transmission of outgoing serial data
  * is complete.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::flush() -> void {
 	//Waits for the transmission of outgoing serial data to complete
@@ -861,7 +869,7 @@ auto hardware::serial_api<tag>::flush() -> void {
 /**
  * \brief The clear method clear the command line console. Do nothing in
  * the Arduino version.
- */
+ 
 template <typename tag>
 auto hardware::serial_api<tag>::clear() -> void {
 	if (tag == 0) {
@@ -873,16 +881,17 @@ auto hardware::serial_api<tag>::clear() -> void {
 	system("CLS");
 }
 
-
+*/
 ////////////////////
 //DISPLAY
 ////////////////////
-/**
-* \brief Initialise the lcd display.
-*/
 
+//Create lcd object
+DFRobot_LCD lcd(16,2);
+
+//brief Initialise the lcd display.
 auto hardware::display::enable() -> void {
-	DFRobot_LCD::init();
+	lcd.init();
 }
 
 /**
@@ -890,7 +899,7 @@ auto hardware::display::enable() -> void {
  * \param cursor_position method set the cursor position.
  */
 auto hardware::display::cursor(coordinate cursor_position) -> void {
-	DFRobot_LCD::setCursor(cursor_position.row, cursor_position.column);
+	lcd.setCursor(cursor_position.row, cursor_position.column);
 }
 
 /**
@@ -899,7 +908,7 @@ auto hardware::display::cursor(coordinate cursor_position) -> void {
  * \return number of char printed.
  */
 auto hardware::display::print(char const* string)->size_t {
-	DFRobot_LCD::printstr(string);
+	lcd.printstr(string);
 	return sizeof(string);
 }
 
@@ -928,12 +937,10 @@ auto hardware::display::print(char const* string)->size_t {
 /**
  * \brief clear the lcd display.
  */
-auto clear() -> void {
-	DFRobot_LCD::clear();
+
+auto hardware::display::clear() -> void {
+	lcd.clear();
 }
-
-
-
 
 
 
