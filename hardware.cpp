@@ -880,81 +880,6 @@ auto hardware::serial_api<tag>::clear() -> void {
 	}
 	system("CLS");
 }
-
-*/
-////////////////////
-//DISPLAY
-////////////////////
-
-//Create lcd object
-DFRobot_LCD lcd(16,2);
-
-//brief Initialise the lcd display.
-auto hardware::display::enable() -> void {
-	lcd.init();
-}
-
-/**
- * \brief
- * \param cursor_position method set the cursor position.
- */
-auto hardware::display::cursor(coordinate cursor_position) -> void {
-	lcd.setCursor(cursor_position.row, cursor_position.column);
-}
-
-/**
- * \brief print a string
- * \param string c string to be displayed.
- * \return number of char printed.
- */
-auto hardware::display::print(char const* string)->size_t {
-	lcd.printstr(string);
-	return sizeof(string);
-}
-
-/**
- * \brief print number in in decimal format.
- * \param n is the number to be printed.
- * \return number of char printed.
- */
-//static auto print(int n)->size_t;
-
-/**
- * \brief print double in in decimal format.
- * \param n is the number to be printed.
- * \return number of char printed.
- */
-//static auto print(double n)->size_t;
-
-/**
- * \brief print a message about the layout of a cell (ie is the cell open or
- * closed in the four directions). \param maze is the layout of the maze
- * \param cell is the cell to be printed.
- * \return number of char printed.
- */
-//static auto print(maze_layout maze, cell_location cell)->size_t;
-
-/**
- * \brief clear the lcd display.
- */
-
-auto hardware::display::clear() -> void {
-	lcd.clear();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ///////////////////////////////////////////////////
 
 // NOTE: Explicit Instantiation of Template Classes...
@@ -965,4 +890,74 @@ auto hardware::display::clear() -> void {
 template class hardware::serial_api<hardware::serial_tag<1>>; //bluetooth
 template class hardware::serial_api<hardware::serial_tag<0>>; //serial
 
-//LCD
+///////////////////////////////////////////////////
+
+////////////////////
+//DISPLAY
+////////////////////
+
+//Create lcd object
+DFRobot_LCD lcd(16,2);
+
+/*
+brief Initialise the lcd display.
+*/
+auto hardware::display::enable() -> void {
+	lcd.init();
+}
+
+/**
+ * \brief
+ * \param cursor_position method set the cursor position.
+ */
+auto hardware::display::cursor(coordinate cursor_position) -> void {
+	lcd.cursor_on();
+	lcd.setCursor(cursor_position.row, cursor_position.column);
+	lcd.cursor_off();
+}
+
+/**
+ * \brief print a string
+ * \param string c string to be displayed.
+ * \return number of char printed.
+ */
+auto hardware::display::print(char const* string)->size_t {
+	lcd.printstr(string);
+	return size_t(sizeof(string));
+}
+
+/**
+ * \brief print number in in decimal format.
+ * \param n is the number to be printed.
+ * \return number of char printed.
+ */
+auto hardware::display::print(int n)->size_t {
+	lcd.print(n, DEC);
+	return size_t(sizeof(n));
+}
+
+/**
+ * \brief print double in in decimal format.
+ * \param n is the number to be printed.
+ * \return number of char printed.
+ */
+auto hardware::display::print(double n)->size_t {
+	lcd.print(n, 5);
+	return size_t(sizeof(n));
+}
+
+/**
+ * \brief print a message about the layout of a cell (ie is the cell open or
+ * closed in the four directions). \param maze is the layout of the maze
+ * \param cell is the cell to be printed.
+ * \return number of char printed.
+ */
+//auto hardware::display::print(maze_layout maze, cell_location cell)->size_t;
+
+/**
+ * \brief clear the lcd display.
+ */
+
+auto hardware::display::clear() -> void {
+	lcd.clear();
+}
