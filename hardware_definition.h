@@ -40,9 +40,12 @@ namespace hardware
         using in4 = digital_pin<10U>;
         //using en2 = digital_pin<12U>;
 
-        using left_encoder_a = interrupt<digital_pin<20U>>;
+        // Encoder interrupt pins
+        using left_encoder_a = digital_pin<2U>; //<digital_pin<18U>;
+        using right_encoder_a = digital_pin<3U>; //digital_pin<19U>;
+
+        // Encoder digital pins
         using left_encoder_b = digital_pin<21U>;
-        using right_encoder_a = interrupt<digital_pin<22U>>;
         using right_encoder_b = digital_pin<23U>;
 
     }    // namespace pins
