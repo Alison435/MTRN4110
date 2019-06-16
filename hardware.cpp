@@ -3,13 +3,14 @@
 #include "units.h"
 #include "hardware_definition.h"
 
+#define PI 3.14
+#define WHEEL_CIRCUM 240 //in mm
+
 using pin_t = uint8_t; //uint8_t is a byte
 
-// Have 'hardware::digital_pin::'' as digital_pin is the template class which I am defining
-// the functions for, which is in the namespace of hardware.
-// In Arduino sketch, added 'using namespace hardware' to avoid repetitive scope operator usage
+//#define USING_MEGA
 
-// 1) Implementation of digital_pin Class
+// ------------------- 1) Implementation of digital_pin Class -------------------
 
 template <pin_t pin> //works
 static auto hardware::digital_pin<pin>::config_io_mode (io_mode mode) -> void
@@ -105,53 +106,27 @@ static auto hardware::digital_pin<pin>::low() -> void
 
 }
 
-    //brief The pwm_write method writes an analog voltage out as PWM wave.
-    //This function does not check if the pin is capable of PWM.
-    // Uno pin 3, 5, 6, 9, 10, 11. Mega: 2 - 13 and 44 - 46.
-    // PWM at 490Hz except pin 5 and 6 are 980Hz.
-    //param duty_cycle value between 0.0 and 100.0 representing is the PWM
-    // duty cycle of 0% to 100%.
-
 template <pin_t pin>
 static auto hardware::digital_pin<pin>::pwm_write (units::percentage duty_cycle) -> void
 {
 
-
-
-    //value: the duty cycle: between 0 (always off) and 255 (always on). Allowed data types: int.
-    analogWrite(pin,duty_cycle);
-
+    //overloaded / operator. allow for unit_type / double multiplication
+    //analogWrite(pin,(duty_cycle * (1/100.0) * 255));
 }
-
-    //
-    // \brief pulse_length measures the duration of a pulse in microseconds.
-    // With either rising or falling edge as trigger.
-    // \param state HIGH for rising edge trigger, LOW for falling edge trigger
-    // start.
-    // \param timeout in microseconds
-    // \return pulse length in
-    // microseconds.
 
 template <pin_t pin>
 static auto hardware::digital_pin<pin>::pulse_length (logic_level state = logic_level::high,
 units::microseconds timeout = 1000000_us) -> units::microseconds
 {
-
-
-
+    //using Arduino pulseIn()
 }
 
-// 2) Implementation of analog_pin Class
+// ------------------- 2) Implementation of analog_pin Class -------------------
 
-    /**
-     * \brief The set_analog_reference method set the reference voltage for
-     * analog read.
-     * \param ref is the analog reference.
-     */
 template <typename base>
 static auto hardware::analog_pin<base>::set_analog_reference (analog_reference ref) -> void
 {
-     switch (ref)
+    switch (ref)
     {
 
         case (analog_reference::vcc_default):
@@ -160,21 +135,9 @@ static auto hardware::analog_pin<base>::set_analog_reference (analog_reference r
             break;
         }
 
-        case (analog_reference::internal_1v1):
-        {
-            analogReference(INTERNAL1V1);
-            break;
-        }
-
-        case (analog_reference::internal):
+        case (analog_reference::internal): //only on UNO
         {
             analogReference(INTERNAL);
-            break;
-        }
-
-        case (analog_reference::internal_2v56):
-        {
-            analogReference(INTERNAL2V56);
             break;
         }
 
@@ -184,47 +147,29 @@ static auto hardware::analog_pin<base>::set_analog_reference (analog_reference r
             break;
         }
 
+        #ifdef USING_MEGA
+
+            case (analog_reference::internal_2v56): //only on MEGA
+            {
+                analogReference(INTERNAL2V56);
+                break;
+            }
+
+            case (analog_reference::internal_1v1): //only on MEGA
+            {
+                analogReference(INTERNAL1V1);
+                break;
+            }
+
+        #endif
+
         default:
             break;
 
     }
 }
 
-    /**
-     * \brief The analog_read method analog input.
-     * \return voltage in volts.
-     */
-template <typename base>
-static auto hardware::analog_pin<base>::analog_read () -> units::volts
-{
-
-    units::volts analogVoltage;
-    analog_reference aRef;
-
-    using analog_io = hardware::analog_pin<base>;
-
-    analogVoltage = (analogRead(pin) * aRef) / analog_io::conversion_unit;
-
-    return analogVoltage;
-
-}
-
-// 3) Implementation of motor Class
-
-/**
- * \brief The motor represents one motor channel of the motor driver. See motor
- * driver data sheets for digital output combination to control the direction of
- * motor. \tparam pin_a is direction pin a \tparam pin_b is direction pin b
- */
-
-/*
-enum class drive_direction : uint8_t
-{
-    unknown,
-    forward,
-    backward
-};
-*/
+// ------------------- 3) Implementation of motor Class -------------------
 
     /**
      * \brief The enable method enables motor control pins.
@@ -233,6 +178,9 @@ template <class pin_a, class pin_b>
 static auto hardware::motor<pin_a,pin_b>::enable () -> void
 {
 
+    // Direction control pins on H-bridge (set to output mode)
+    pin_a::config_io_mode(io_mode::output);
+    pin_b::config_io_mode(io_mode::output);
 
 }
 
@@ -243,37 +191,142 @@ template <class pin_a, class pin_b>
 static auto hardware::motor<pin_a,pin_b>::stop () -> void
 {
 
+    //send 0 to both motor pins
+    pin_a::write(logic_level::low);
+    pin_b::write(logic_level::low);
 
 }
 
-    /**
-     * \brief The forward method makes the motor goes forward.
-     * \param velocity is percentage of maximum speed of motor.
-     */
+//class percentage : public base_unit<percentage, double>
+// For base_unit class -> template <typename derived_units_name, typename value_t = double>
+
 template <class pin_a, class pin_b>
 static auto hardware::motor<pin_a,pin_b>::forward (units::percentage velocity) -> void
 {
 
+    drive_direction driveD = drive_direction::forward;
+
+    //send one motor to 1 and one to 0
+    pin_a::write(logic_level::high);
+    pin_b::write(logic_level::low);
+
+    // Logic to determine if motor 1 or motor 2
+    // match enable pin with designated motor?
+
+    /*
+
+    if ()
+    {
+
+    }
+
+    */
+
+    //send desired PWM
+    //Serial.println(velocity.count());
+    hardware::en1::pwm_write(velocity);
 
 }
 
-    /**
-     * \brief The forward method makes the motor goes backward.
-     * \param velocity is percentage of maximum speed of motor.
-     */
 template <class pin_a, class pin_b>
 static auto hardware::motor<pin_a,pin_b>::backward (units::percentage velocity) -> void
 {
 
+    drive_direction driveD = drive_direction::backward;
+
+    //send one motor to 0 and one to 1
+    pin_a::write(logic_level::low);
+    pin_b::write(logic_level::high);
+
+    //send desired PWM
+    hardware::en1::pwm_write(velocity); //make dynamic somehow...to suit different motor enable pins
 
 }
 
-// ---------------TODO: Jono-------------------
+// ---------------- Implementation of interrupt class --------------
 
-// 4) Implementation of encoder Class {awaiting physical parts for testing but will start code soon}
-// 5) Implementation of wheel Class
+//eg: using left_encoder_a = interrupt<digital_pin<20U>>;
 
-// ---------------TODO: Jono-------------------
+    //brief The attach_interrupt method set the interrupt service routine
+    //(ISR) that will be called when an interrupt is triggered.
+    //\param callback
+    //function with function signature of void meow ();
+    //param mode is the
+    //interrupt trigger condition.
+template <typename pin>
+static auto hardware::interrupt<pin>::attach_interrupt (void (*callback) (),interrupt_mode mode = interrupt_mode::rising) -> void
+{
+
+    // callback function = function another function calls when a condition is met
+    attachInterrupt(pin,(*callback)(), mode);
+
+}
+
+template <typename pin>
+static auto hardware::interrupt<pin>::detach_interrupt () -> void
+{
+
+    detachInterrupt(digitalPinToInterrupt(pin));
+
+}
+
+// ------------------- 4) Implementation of encoder Class -------------------
+
+// Pin a = interrupt
+// Pin b = digital pin
+
+template <typename pin_a, typename pin_b>
+static auto hardware::encoder<pin_a,pin_b>::enable () -> void
+{
+
+    // enable encoder pins
+    pin_a::config_io_mode (io_mode::output);
+    pin_b::config_io_mode (io_mode::output);
+
+}
+
+    /**
+     * \brief The count method returns the current count of the encoder.
+     * \return current count.
+     */
+
+template <typename pin_a, typename pin_b>
+static auto hardware::encoder<pin_a,pin_b>::count () -> encoder_count
+{
+
+    //alias of encoder_count = int;
+    // Get count from interrupt of A and B channels
+
+
+}
+
+    /**
+     * \brief The reset method reset the current count and position of the
+     * encoder.
+     */
+template <typename pin_a, typename pin_b>
+static auto hardware::encoder<pin_a,pin_b>::reset () -> void
+{
+
+
+
+}
+
+// ------------------- 5) Implementation of wheel Class -------------------
+
+     //brief The position method returns the distance traveled by the wheel,
+     //assume no slip. \return the distance traveled by the wheel
+template <typename pin_a, typename pin_b>
+static auto hardware::wheel<pin_a,pin_b>::position () -> units::millimeters
+{
+
+    //PI
+    //WHEEL_CIRCUM
+
+    //Distance Travelled = (Encoder Count / 360) * WHEEL_CIRCUM
+
+}
+
 
 // NOTE: Explicit Instantiation of Template Classes...
 
@@ -286,8 +339,14 @@ template class hardware::analog_pin<hardware::digital_pin<1U>>; //for analog tes
 
 // Motor Driver (H-bridge)
 
+template class hardware::digital_pin<3U>;
+template class hardware::digital_pin<12U>;
 template class hardware::motor<hardware::pins::in1, hardware::pins::in2>; //Pins 2,4
 template class hardware::motor<hardware::pins::in3, hardware::pins::in4>;  //Pins 9,10
 
-// Encoder
+// Encoder and Wheel
 
+template class hardware::wheel<hardware::pins::left_encoder_a, hardware::pins::left_encoder_b>;
+template class hardware::wheel<hardware::pins::right_encoder_a, hardware::pins::right_encoder_b>;
+template class hardware::encoder<hardware::pins::left_encoder_a, hardware::pins::left_encoder_b>;
+template class hardware::encoder<hardware::pins::right_encoder_a, hardware::pins::right_encoder_b>;
