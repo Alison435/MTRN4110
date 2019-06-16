@@ -35,18 +35,24 @@ void setupMotor()
 
 void setupEncoderWheel()
 {
-  /*
+ 
   left_wheel::enable();
   right_wheel::enable();
   left_encoder::enable();
   right_encoder::enable();
-  */
+
 }
 
 // Timing for hardware tests
 unsigned long motor_duration = 5000;
+unsigned long motor_timer = 0;
 unsigned long led_timer = 0;
 logic_level ledLogic = logic_level::low;  // LED logic level (to be toggled)
+
+// Units for Encoder + Motor + Wheel (using C++ API)
+units::percentage mFullSpeed(25.0);
+units::percentage mHalfSpeed(50.0);
+
 
 void setup() {
 
@@ -129,23 +135,41 @@ void loop() {
         }
         
         statusGreen::write(ledLogic);            
-    }
 
-      system_mode = CHOOSE_TEST;    
+        if (test_Num == '0')
+        {
+          system_mode = CHOOSE_TEST;    //stop toggling LED
+        }        
+      }
+
       break;
 
     case (TEST_2):
     
-      //TEST PROGRAM   
+      if (millis() - motor_timer > motor_duration)
+      {
+        motor_timer = millis();    
+        right_motor::stop();  
+        delay(15);
+        system_mode = CHOOSE_TEST;
+      }
+    
+      right_motor::forward();   
       
-      system_mode = CHOOSE_TEST;
       break;
 
     case (TEST_3):
     
-      //TEST PROGRAM
+      if (millis() - motor_timer > motor_duration)
+      {
+        motor_timer = millis();    
+        left_motor::stop();  
+        delay(15);
+        system_mode = CHOOSE_TEST;
+      }
+    
+      left_motor::backward();   
       
-      system_mode = CHOOSE_TEST;
       break;
 
    case (TEST_4):
@@ -201,21 +225,49 @@ void loop() {
   
   #ifdef MOTOR_1_TEST
 
-    right_motor::forward();
+    right_motor::forward(mFullSpeed); //full speed = 100.0; (25.0 atm)
+    delay(1000);
+    right_motor::backward(mFullSpeed);
+    delay(1000);
+    right_motor::stop();
+
+    /*
+    if (millis() - motor_timer > motor_duration)
+    {
+      motor_timer = millis();    
+      right_motor::stop();  
+    }
+    
+    right_motor::forward(mFullSpeed);          
+    */
     
   #endif
    
   //3. Test Motor 2 Functionality
 
   /*
-   * 2. Run motor 2 at full speed in the forward direction for 5 seconds (2), 
+   * 2. Run motor 2 at half speed in the backward direction for 5 seconds (2), 
    * display the readings of the associated encoder on the serial monitor of Arduino (2), 
    * and display the distance travelled by the wheel
    */
 
   #ifdef MOTOR_2_TEST
 
+    right_motor::backward(mHalfSpeed); //half speed = 50.0
+    delay(100);
+    right_motor::forward(mHalfSpeed);
+    delay(100);
+    right_motor::stop();
 
+    /*
+    if (millis() - motor_timer > motor_duration)
+    {
+      motor_timer = millis();    
+      left_motor::stop();  
+    }
+    
+    left_motor::backward(mHalfSpeed);          
+    */
     
   #endif
 
