@@ -1,0 +1,38 @@
+/*
+ *4. Devise an appropriate encoding method (2) and successfully encode and send a 2 by 3 maze
+layout given by the demonstrator to the Arduino from an external device through Bluetooth,
+and display the string on the serial monitor (3) – (Total 5)
+
+ */
+
+#define ROW 3
+#define COL 3
+
+char inString[ROW*COL]; //include null character
+int array[ROW][COL]; 
+
+void setup() {
+  Serial.begin(9600);
+  Serial1.begin(9600);
+}
+
+void loop() {
+  if (Serial1.available())
+  {
+    char myBuffer[ROW*COL] = "";
+    byte index = 0;
+  
+    while (Serial1.available() and index < sizeof(myBuffer))
+    {
+     myBuffer[index++] = Serial1.read();
+     //myBuffer[index] = '\0';
+    }
+
+
+    array[0][0] = myBuffer[0] - '0';
+    Serial.print(array[0][0]);
+    Serial.print("\n");
+    
+
+  }
+}
