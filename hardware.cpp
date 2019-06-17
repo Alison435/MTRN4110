@@ -93,7 +93,7 @@ static auto hardware::digital_pin<pin>::high() -> void
 {
 
     digitalWrite(pin,HIGH);
-    Serial.println("Pin is HIGH");
+    //Serial.println("Pin is HIGH");
 
 }
 
@@ -102,7 +102,7 @@ static auto hardware::digital_pin<pin>::low() -> void
 {
 
     digitalWrite(pin,LOW);
-    Serial.println("Pin is LOW");
+    //Serial.println("Pin is LOW");
 
 }
 
@@ -111,7 +111,7 @@ static auto hardware::digital_pin<pin>::pwm_write (units::percentage duty_cycle)
 {
 
     //overloaded / operator. allow for unit_type / double multiplication
-    //analogWrite(pin,(duty_cycle * (1/100.0) * 255));
+    analogWrite(pin,(double(duty_cycle.count()) * (1/100.0) * 255));
 }
 
 template <pin_t pin>
@@ -195,10 +195,12 @@ static auto hardware::motor<pin_a,pin_b>::stop () -> void
     pin_a::write(logic_level::low);
     pin_b::write(logic_level::low);
 
-}
+    units::percentage stopPWM(0.0);
 
-//class percentage : public base_unit<percentage, double>
-// For base_unit class -> template <typename derived_units_name, typename value_t = double>
+    pin_a::pwm_write(stopPWM);
+    pin_b::pwm_write(stopPWM);
+
+}
 
 template <class pin_a, class pin_b>
 static auto hardware::motor<pin_a,pin_b>::forward (units::percentage velocity) -> void
@@ -212,20 +214,23 @@ static auto hardware::motor<pin_a,pin_b>::forward (units::percentage velocity) -
 
     // Logic to determine if motor 1 or motor 2
     // match enable pin with designated motor?
+    // Depending on pins for motor1 and motor2  direction
 
-    /*
-
-    if ()
+    if (pins::in1::read() == logic_level::high || pins::in2::read() == logic_level::low)
     {
 
+        hardware::en1::pwm_write(velocity);
+        Serial.println("Right M Forward");
+
     }
+    else //other motor is desired
+    {
 
-    */
+        hardware::en2::pwm_write(velocity);
+        Serial.println("Left M Forward");
 
-    //send desired PWM
-    //Serial.println(velocity.count());
-    hardware::en1::pwm_write(velocity);
 
+    }
 }
 
 template <class pin_a, class pin_b>
@@ -238,35 +243,17 @@ static auto hardware::motor<pin_a,pin_b>::backward (units::percentage velocity) 
     pin_a::write(logic_level::low);
     pin_b::write(logic_level::high);
 
-    //send desired PWM
-    hardware::en1::pwm_write(velocity); //make dynamic somehow...to suit different motor enable pins
+    if (pins::in1::read() == logic_level::low || pins::in2::read() == logic_level::high)
+    {
 
-}
-
-// ---------------- Implementation of interrupt class --------------
-
-//eg: using left_encoder_a = interrupt<digital_pin<20U>>;
-
-    //brief The attach_interrupt method set the interrupt service routine
-    //(ISR) that will be called when an interrupt is triggered.
-    //\param callback
-    //function with function signature of void meow ();
-    //param mode is the
-    //interrupt trigger condition.
-template <typename pin>
-static auto hardware::interrupt<pin>::attach_interrupt (void (*callback) (),interrupt_mode mode = interrupt_mode::rising) -> void
-{
-
-    // callback function = function another function calls when a condition is met
-    attachInterrupt(pin,(*callback)(), mode);
-
-}
-
-template <typename pin>
-static auto hardware::interrupt<pin>::detach_interrupt () -> void
-{
-
-    detachInterrupt(digitalPinToInterrupt(pin));
+        hardware::en1::pwm_write(velocity);
+        Serial.println("Right M Backward");
+    }
+    else //other motor is desired
+    {
+        hardware::en2::pwm_write(velocity);
+        Serial.println("Left M Backward");
+    }
 
 }
 
@@ -280,8 +267,9 @@ static auto hardware::encoder<pin_a,pin_b>::enable () -> void
 {
 
     // enable encoder pins
-    pin_a::config_io_mode (io_mode::output);
-    pin_b::config_io_mode (io_mode::output);
+    pin_a::config_io_mode (io_mode::input);
+    pin_b::config_io_mode (io_mode::input);
+    // pin_a is set up as interrupt for each encoder (left and right)
 
 }
 
@@ -325,8 +313,36 @@ static auto hardware::wheel<pin_a,pin_b>::position () -> units::millimeters
 
     //Distance Travelled = (Encoder Count / 360) * WHEEL_CIRCUM
 
+    units::millimeters robotDistance(0.0); //millimeters is a double type
+
+    //return units::millimeters robotDistance.count();
+
 }
 
+/*
+// ---------------- Implementation of interrupt class --------------
+
+//eg: using left_encoder_a = interrupt<digital_pin<20U>>;
+
+template <typename pin>
+static auto hardware::interrupt<pin>::attach_interrupt (void (*callback) (),
+    interrupt_mode mode = interrupt_mode::rising) -> void
+{
+
+    // callback function = function another function calls when a condition is met
+    //attachInterrupt(pin,(*callback)(), interrupt_mode::rising);
+
+}
+
+template <typename pin>
+static auto hardware::interrupt<pin>::detach_interrupt () -> void
+{
+
+    //detachInterrupt(digitalPinToInterrupt(pin));
+
+}
+
+*/
 
 // NOTE: Explicit Instantiation of Template Classes...
 
