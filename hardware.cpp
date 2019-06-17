@@ -214,9 +214,11 @@ static auto hardware::motor<pin_a,pin_b>::forward (units::percentage velocity) -
 
     // Logic to determine if motor 1 or motor 2
     // match enable pin with designated motor?
-    // Depending on pins for motor1 and motor2  direction
 
-    if (pins::in1::read() == logic_level::high || pins::in2::read() == logic_level::low)
+    //in1 = digital_pin<7U> for motor1
+    //in3 = digital_pin<11U> for motor2
+
+    if (pin_a::read() == logic_level::high && pins::in1::read() == logic_level::high)
     {
 
         hardware::en1::pwm_write(velocity);
@@ -228,7 +230,6 @@ static auto hardware::motor<pin_a,pin_b>::forward (units::percentage velocity) -
 
         hardware::en2::pwm_write(velocity);
         Serial.println("Left M Forward");
-
 
     }
 }
@@ -243,7 +244,7 @@ static auto hardware::motor<pin_a,pin_b>::backward (units::percentage velocity) 
     pin_a::write(logic_level::low);
     pin_b::write(logic_level::high);
 
-    if (pins::in1::read() == logic_level::low || pins::in2::read() == logic_level::high)
+    if (pin_b::read() == logic_level::high && pins::in2::read() == logic_level::high)
     {
 
         hardware::en1::pwm_write(velocity);
