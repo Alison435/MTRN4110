@@ -1,86 +1,19 @@
+//Part 5 
+//Draw maze in serial monitor
+
 #define ROWS_wall 2
 #define COLS_wall 3
-
-  // vertical walls array
-  bool verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1},
-                                                   {1,0,1,1}, };
-                                                       
-  // horizontal walls array
-  bool horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1},
-                                                      {0,1,0},
-                                                      {1,1,1}, };
-void setup() 
-{
-  Serial.begin(9600);
-
-  for (int i = 0; i < 2 * ROWS_wall + 1; i++)
-  {
-    for (int j = 0; j < 2 * COLS_wall + 1; j++)
-    {
-      //Print Horizontal Walls
-      if (i % 2 == 0 && j % 2 == 1) //NOTE 1 % 2 equals 1 (modulo)
-      {
-        if (horizontalWalls[i / 2][j / 2] == true)
-        {
-          Serial.print(" ---"); //offset horizontal wall from start
-        }
-        else
-        {
-          Serial.print("    ");
-        }
-      }
-
-      //Print Vertical Walls
-      if (i % 2 == 1 && j % 2 == 0)
-      {
-        if (verticalWalls[i / 2][j / 2] == true)
-        {
-          Serial.print("|");
-          //Serial1.print("|");
-        }
-        else
-        {
-          Serial.print("   ");
-        }
-      }
-    //Serial.print("   ");
-    }
-    Serial.print("\n");
-  }
-}
- 
-void loop() 
-{
-  
-}
-
-
-
-
-//////////////////
-
-
-#define ROWS_wall 5
-#define COLS_wall 9
 
 bool closedMaze = true; //is the maze closed?
 
   // vertical walls array
-  bool verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1},               //verticalWalls[6][11]
-                                                   {1,1,1,0,0,1,0,1,1,1}
-                                                   {1,0,0,1,0,0,1,1,1,1}
-                                                   {1,0,0,0,1,0,0,0,0,1}
-                                                   {1,0,0,0,0,1,0,0,0,1}
-                                                   {1,0,1,0,0,0,1,0,1,1}
-                                                   };
+  bool verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1},               //verticalWalls[2][4]
+                                                   {1,0,1,1}};
                                                        
   // horizontal walls array                                                 
-  bool horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1},              //horizontalWalls[7][10]
-                                                      {0,0,1,1,0,1,1,0,0},
-                                                      {0,1,0,1,1,1,0,0,1},
-                                                      {1,0,1,1,0,1,0,0,0},
-                                                      {0,1,0,1,0,1,0,1,0},
-                                                      {1,1,1,1,1,1,1,1,1}};
+  bool horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1},              //horizontalWalls[3][3]
+                                                      {0,1,0},
+                                                      {1,1,1}};
 void setup() 
 {
   Serial.begin(9600);
