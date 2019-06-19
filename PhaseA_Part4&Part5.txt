@@ -9,10 +9,20 @@
 //MAZE STUFF
 /////////////
 
-int horizontalWalls[ROWS_wall+1][COLS_wall];
-int verticalWalls[ROWS_wall][COLS_wall+1];
+bool horizontalWalls[ROWS_wall+1][COLS_wall];
+bool verticalWalls[ROWS_wall][COLS_wall+1];
 int x = 0;
-bool closedMaze = true; //is the maze closed?
+
+/*
+// vertical walls array
+  bool verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,1,1},               //verticalWalls[2][4]
+                                         {1,0,1,1}};
+                                                       
+  // horizontal walls array                                                 
+  bool horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1},              //horizontalWalls[3][3]
+                                            {1,0,1},
+                                            {1,1,1}};
+*/
 
 ///STORING VALUES STUFF FROM SERIAL INPUT
 //////////////
@@ -55,6 +65,7 @@ void setup() {
     }
   }
 
+
   //Start storing vertical array
   Serial.print("Please enter 8 values for array_V from top to bottom and left to right\n");
   while(v<V_size){
@@ -81,7 +92,7 @@ void setup() {
   //print array_H
   h = 0 ;
   while(h< H_size){
-      Serial.print(array_H[h]);  
+      Serial.print(bool(array_H[h]));  
       h++;
   }
   
@@ -91,7 +102,7 @@ void setup() {
   //print array_V
   v = 0 ;
   while(v<V_size){
-      Serial.print(array_V[v]);  
+      Serial.print(bool(array_V[v]));  
       v++;
   }
 
@@ -109,7 +120,7 @@ void setup() {
           }
         }
       }
-
+      x=0;
       //vertical
       for(int row = 0; row < 2; row++){
         for(int col = 0; col < 4; col++){
@@ -124,7 +135,6 @@ void setup() {
 /////////////////////////////////////
 
 //Print maze
-
          for(int i = 0;i < 2*ROWS_wall+1;i++)
         {
             for(int j = 0;j < 2*COLS_wall+1;j++)
