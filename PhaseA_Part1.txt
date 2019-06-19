@@ -2,6 +2,9 @@
 //Part 1
 // AT Mode 'OK'
 //Liam Ho z5114385
+/*
+1. The demonstrator inputs “AT” in the serial monitor of Bluetooth and receives a response “OK” (2)
+*/
 
 char InSerial = '0';
 const byte  LEDPIN = 13;  //On board LED

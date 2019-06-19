@@ -1,0 +1,197 @@
+
+#define ROWS_wall 2
+#define COLS_wall 3
+#define H_size 9
+#define V_size 8
+
+//MAZE STUFF
+/////////////
+
+int horizontalWalls[ROWS_wall+1][COLS_wall];
+int verticalWalls[ROWS_wall][COLS_wall+1];
+int x = 0;
+bool closedMaze = true; //is the maze closed?
+
+///STORING VALUES STUFF FROM SERIAL INPUT
+//////////////
+//arrays to store stuff in
+int array_H[H_size];
+int array_V[V_size];
+
+//var from serial
+unsigned int integerValue=0;  // Max value is 65535
+char incomingByte;
+
+int h = 0;
+int v = 0;
+
+////////////////////////////////////
+                                                      
+void setup() {
+
+  //Setup Serial
+  Serial.begin(9600);
+
+/////////////////////////////////////
+
+  //Start storing horizontal array
+  Serial.print("Please enter 9 values for array_H from top to bottom and left to right\n");
+  while(h<H_size){
+      if (Serial.available() > 0) {   // something came across serial
+        integerValue = 0;         // throw away previous integerValue
+        while(1) {            // force into a loop until 'n' is received
+          incomingByte = Serial.read();
+          if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
+          if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
+          if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
+          integerValue *= 10;  // shift left 1 decimal place
+          // convert ASCII to integer, add, and shift left 1 decimal place
+          integerValue = ((incomingByte - 48) + integerValue);
+        }
+        array_H[h] = integerValue;  
+        h++;
+    }
+  }
+
+  //Start storing vertical array
+  Serial.print("Please enter 8 values for array_V from top to bottom and left to right\n");
+  while(v<V_size){
+      if (Serial.available() > 0) {   // something came across serial
+        integerValue = 0;         // throw away previous integerValue
+        while(1) {            // force into a loop until 'n' is received
+          incomingByte = Serial.read();
+          if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
+          if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
+          if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
+          integerValue *= 10;  // shift left 1 decimal place
+          // convert ASCII to integer, add, and shift left 1 decimal place
+          integerValue = ((incomingByte - 48) + integerValue);
+        }
+        array_V[v] = integerValue;  
+        v++;
+    }
+  }
+
+/////////////////////////////////////
+
+  Serial.print("Array values entered for Horizontal array is ");
+  //Print array contents
+  //print array_H
+  h = 0 ;
+  while(h< H_size){
+      Serial.print(array_H[h]);  
+      h++;
+  }
+  
+  Serial.print("\n");
+
+  Serial.print("Array values entered for Vertical array is ");
+  //print array_V
+  v = 0 ;
+  while(v<V_size){
+      Serial.print(array_V[v]);  
+      v++;
+  }
+
+  Serial.print("\n");
+
+/////////////////////////////////////
+//Convert array to suitable size array
+//store values
+
+      //horizontal
+      for(int row = 0; row < 3; row++){
+        for(int col = 0; col < 3; col++){
+          if(x != 9){
+            horizontalWalls[row][col] = array_H[x++];
+          }
+        }
+      }
+
+      //vertical
+      for(int row = 0; row < 2; row++){
+        for(int col = 0; col < 4; col++){
+          if(x != 9){
+            verticalWalls[row][col] = array_V[x++];
+          }
+        }
+      }
+
+
+
+/////////////////////////////////////
+
+//Print maze
+
+ for (int i = 0; i < (2 * ROWS_wall + 1); i++)
+  {
+    for (int j = 0; j < (2 * COLS_wall + 1); j++)
+    {
+      //Print Horizontal Walls
+      if (i % 2 == 0 && j % 2 == 1) //NOTE 1 % 2 equals 1 (modulo)
+      {
+        if (horizontalWalls[i / 2][j / 2] == true)
+        {
+          Serial.print(" ---"); //offset horizontal wall from start
+        }
+        else
+        {
+          Serial.print("    ");
+        }
+      }
+
+      //Print Vertical Walls
+      if (i % 2 == 1 && j % 2 == 0)
+      {
+        
+        //Serial.println(i); //i = {1,3} = valid rows
+        //delay(15);
+        //Serial.print(j); //j = {0,2,4,6} = valid col
+        //delay(15);
+
+        //when mapping valid map index to verticalWalls matrix (binary)
+        //col val = always / 2
+        //row val = 1 -> 0 or 3 -> 1     
+
+          //if closed maze, encode all outer boundaries as walls
+          if (closedMaze)
+          {
+            if ( j == 0)
+            {            
+               Serial.print("|   ");
+               //Serial.print(j);
+               //delay(50);
+               //Serial.print(i);
+               //delay(50);
+            }
+            else if ( j == 2*COLS_wall )
+            {            
+               Serial.print("|   ");
+               //Serial.print(j);
+               //delay(50);
+               //Serial.print(i);
+               //delay(50);
+            }
+            else if ( verticalWalls[j/2][i - 2] == true && (i > ROWS_wall)) // when row is 3
+            {
+              Serial.print("|   ");
+              //Serial.print(j);
+              //delay(50);
+              //Serial.print(i);
+              //delay(50);
+              //Serial1.print("|");
+            }           
+            else
+              Serial.print("    "); 
+              continue;
+            }            
+          }        
+    }
+    Serial.print("\n");
+  }
+
+}
+
+
+void loop() {
+}
