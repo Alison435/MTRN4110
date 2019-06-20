@@ -43,16 +43,17 @@ void setup() {
 
   //Setup Serial
   Serial.begin(9600);
+  Serial1.begin(9600);
 
 /////////////////////////////////////
 
   //Start storing horizontal array
-  Serial.print("Please enter 9 values for array_H from top to bottom and left to right\n");
+  Serial1.print("Please enter 9 values for array_H from top to bottom and left to right\n");
   while(h<H_size){
-      if (Serial.available() > 0) {   // something came across serial
+      if (Serial1.available() > 0) {   // something came across serial
         integerValue = 0;         // throw away previous integerValue
         while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial.read();
+          incomingByte = Serial1.read();
           if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
           if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
           if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
@@ -67,12 +68,12 @@ void setup() {
 
 
   //Start storing vertical array
-  Serial.print("Please enter 8 values for array_V from top to bottom and left to right\n");
+  Serial1.print("Please enter 8 values for array_V from top to bottom and left to right\n");
   while(v<V_size){
-      if (Serial.available() > 0) {   // something came across serial
+      if (Serial1.available() > 0) {   // something came across serial
         integerValue = 0;         // throw away previous integerValue
         while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial.read();
+          incomingByte = Serial1.read();
           if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
           if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
           if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
@@ -87,7 +88,7 @@ void setup() {
 
 /////////////////////////////////////
 
-  Serial.print("Array values entered for Horizontal array is ");
+  Serial.print("The array string entered for Horizontal array is ");
   //Print array contents
   //print array_H
   h = 0 ;
@@ -98,7 +99,7 @@ void setup() {
   
   Serial.print("\n");
 
-  Serial.print("Array values entered for Vertical array is ");
+  Serial.print("The array string entered for Vertical array is ");
   //print array_V
   v = 0 ;
   while(v<V_size){
