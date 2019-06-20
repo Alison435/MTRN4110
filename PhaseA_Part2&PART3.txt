@@ -10,6 +10,7 @@ external device and display on the external device (2)
 */
 
 //USING PUTTY
+//SET TO NO LINE ENDING
 
 #include <Wire.h>
 #include "DFRobot_LCD.h"
