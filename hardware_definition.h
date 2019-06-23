@@ -14,7 +14,7 @@ namespace hardware
         // 1) Pins for Sensors
 
         // imu_interrupt is used by imu to signal data ready.
-        using imu_interrupt = digital_pin<1U>;
+        using imu_interrupt = digital_pin<18U>;
 
         // The sonar_trigger is ultrasound trigger pin
         using sonar_trigger = digital_pin<6U>; //<digital_pin<12U>
@@ -36,14 +36,14 @@ namespace hardware
         using in2 = digital_pin<8U>; //<digital_pin<9U>;
 
         // Left Motor (Direction)
-        using in3 = digital_pin<11U>; //<digital_pin<12U>;
-        using in4 = digital_pin<12U>; //<digital_pin<13U>;
+        using in3 = digital_pin<11U>; //<digital_pin<14U>;
+        using in4 = digital_pin<12U>; //<digital_pin<15U>;
 
         // Encoder interrupt pins
-        using left_encoder_a = digital_pin<2U>; //<digital_pin<18U>;
+        using left_encoder_a = digital_pin<2U>; //<digital_pin<2U>;
         using left_encoder_b = digital_pin<1U>; //<digital_pin<22U>;
 
-        using right_encoder_a = digital_pin<3U>; //digital_pin<19U>;
+        using right_encoder_a = digital_pin<3U>; //digital_pin<3U>;
         using right_encoder_b = digital_pin<4U>; //<digital_pin<24U>;
 
 
