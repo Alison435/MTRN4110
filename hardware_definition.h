@@ -56,10 +56,10 @@ namespace hardware
 using led = digital_pin<13U>;
 
 // Red LED
-using statusRed = digital_pin<8U>; //<digital_pin<2U>;
+using statusRed = digital_pin<8U>; //<digital_pin<5U>;
 
 // Green LED
-using statusGreen = digital_pin<6U>; //<digital_pin<3U>;
+using statusGreen = digital_pin<6U>; //<digital_pin<6U>;
 
 // 2. Pins for Encoder, Motor and Wheel
 
