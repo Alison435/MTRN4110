@@ -10,21 +10,20 @@
 using namespace hardware;
 
 // ------------Demonstrator-assigned wheel angle (in degrees)---------------
-#define LEFT_WHEEL_ANGLE 45
-#define RIGHT_WHEEL_ANGLE 45
+#define LEFT_WHEEL_ANGLE 90
+#define RIGHT_WHEEL_ANGLE -90
 //-------------------------------------------------------------------------
 
 //#define TOGGLE_LED
 //#define MOTOR_1_TEST
 //#define MOTOR_2_TEST
-#define L_ENCODER_TEST
-//#define R_ENCODER_TEST
+//#define L_ENCODER_TEST
+#define R_ENCODER_TEST
 
 #define PI_ 3.14
 #define WHEEL_CIRCUM 240.0 //in mm
-#define COUNTS_PER_REV 16.0
+#define COUNTS_PER_REV 720.0 //calibration = 1 count = 0.5 degrees
 #define ANGLE_OFFSET 15
-char angle_array[12];
 
 // Encoder variables for Phase A
 volatile int eCountR = 0; 
@@ -136,7 +135,7 @@ logic_level ledLogic = logic_level::low;  // LED logic level set LOW as default 
 // Units for Encoder + Motor + Wheel (using C++ API)
 units::percentage mFullSpeed(75.0);
 units::percentage mHalfSpeed(30.0);
-units::percentage mtestSpeed(15.0);
+units::percentage mtestSpeed(30.0);
 
 void setup() {
 
@@ -421,22 +420,21 @@ void loop() {
 
   #ifdef L_ENCODER_TEST
 
-    int angle = LEFT_WHEEL_ANGLE; // aiming for +/- 15 degrees
-    //~ 1 encoder tick = 5 degrees -> 1800 / 360 = ~5
+    int angle = 3 * LEFT_WHEEL_ANGLE; // aiming for +/- 15 degrees
+    //~ 1 encoder tick = 0.5 degrees
     
     if (angle > 0) left_motor::forward(mtestSpeed); 
     else left_motor::backward(mtestSpeed);
     
-    Serial.print("lEncoder: "); Serial.print(eCountL);
-    Serial.print(" Angle: "); Serial.println(abs(eCountL * 5));
+    Serial.print("lEncoder: "); Serial.println(eCountL);
 
     // Calculation of "error" given the setpoint
-    if ( ((abs(angle) - abs((eCountL * 5))) <= ANGLE_OFFSET) || abs((eCountL * 5)) >= (abs(angle) + ANGLE_OFFSET))
+    if ( ((abs(angle) - abs((eCountL * 0.5))) <= ANGLE_OFFSET) || abs((eCountL * 0.5)) >= (abs(angle) + ANGLE_OFFSET))
     {
        left_motor::stop();
        resetEncoderL();
-       sprintf(angle_array, "%d\n", angle);
-       delay(100);
+       if (eCountL != 0) eCountL = 0;
+       delay(1000);
     } 
 
   #endif
@@ -454,22 +452,19 @@ void loop() {
   #ifdef R_ENCODER_TEST
 
     int angle = RIGHT_WHEEL_ANGLE;
-    //~ 1 encoder tick = 5 degrees
+    //~ 1 encoder tick = 0.5 degrees
     
     if (angle > 0)right_motor::forward(mtestSpeed); 
     else right_motor::backward(mtestSpeed);
     
-    Serial.print("REncoder: "); Serial.print(eCountR);
-    Serial.print(" Angle: "); Serial.println(abs(eCountR * 5));
-
+    Serial.print("REncoder: "); Serial.println(-eCountR);
 
     // Calculation of "error" given the setpoint
-    if ( ((abs(angle) - abs((eCountR * 5))) <= ANGLE_OFFSET) || abs((eCountR * 5)) >= (abs(angle) + ANGLE_OFFSET))
+    if ( ((abs(angle) - abs((eCountR * 0.5))) <= ANGLE_OFFSET) || abs((eCountR * 0.5)) >= (abs(angle) + ANGLE_OFFSET))
     {
        right_motor::stop();
        resetEncoderR();
-       sprintf(angle_array, "%d\n", angle);
-       delay(100);
+       delay(1000);
     } 
 
 
