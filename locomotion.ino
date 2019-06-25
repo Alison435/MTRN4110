@@ -9,14 +9,92 @@
 // Avoids prepending scope operator to all functions
 using namespace hardware;
 
+// ------------Demonstrator-assigned wheel angle (in degrees)---------------
 #define LEFT_WHEEL_ANGLE 45
 #define RIGHT_WHEEL_ANGLE 45
+//-------------------------------------------------------------------------
 
 //#define TOGGLE_LED
-#define MOTOR_1_TEST
+//#define MOTOR_1_TEST
 //#define MOTOR_2_TEST
-//#define L_ENCODER_TEST
+#define L_ENCODER_TEST
 //#define R_ENCODER_TEST
+
+#define PI_ 3.14
+#define WHEEL_CIRCUM 240.0 //in mm
+#define COUNTS_PER_REV 16.0
+#define ANGLE_OFFSET 15
+char angle_array[12];
+
+// Encoder variables for Phase A
+volatile int eCountR = 0; 
+volatile int eCountL = 0; 
+volatile byte pinAcountR;
+volatile byte pinAcountL;
+boolean DirectionR = true; // Rotation direction for right motor
+boolean DirectionL = true; // Rotation direction for left motor
+
+// ISR for encoder interrupt at Right Motor
+void encoderCountR()
+{
+    encoder_count LstateR = int(pins::right_encoder_a::read());
+
+    if((pinAcountR == LOW) && LstateR == HIGH)
+    {
+        encoder_count encoder_bR = encoder_count(pins::right_encoder_b::read());
+
+        if(encoder_bR == LOW && DirectionR)
+        {
+          DirectionR = false; //Reverse
+
+        }
+        else if(encoder_bR == HIGH && !DirectionR)
+        {
+          DirectionR = true;  //Forward
+        }
+    }
+
+    pinAcountR = LstateR;
+
+    if(!DirectionR)  eCountR++;
+    else  eCountR--;
+}
+
+// ISR for encoder interrupt at Left Motor
+void encoderCountL()
+{
+    encoder_count LstateL = encoder_count(pins::left_encoder_a::read());
+
+    if((pinAcountL == LOW) && LstateL == HIGH)
+    {
+        encoder_count encoder_bL = encoder_count(pins::left_encoder_b::read());
+
+        if(encoder_bL == LOW && DirectionL)
+        {
+          DirectionL = false; //Reverse
+
+        }
+        else if(encoder_bL == HIGH && !DirectionL)
+        {
+          DirectionL = true;  //Forward
+        }
+    }
+
+    pinAcountL = LstateL;
+
+    if(!DirectionL)  eCountL++;
+    else  eCountL--;
+}
+
+void resetEncoderR()
+{
+  eCountR = 0;
+}
+
+void resetEncoderL()
+{
+  eCountL = 0;
+}
 
 void setupDigitalPins()
 {
@@ -27,32 +105,38 @@ void setupDigitalPins()
 
 void setupMotor()
 {  
-  en1::config_io_mode(io_mode::output); //for pwm control of right motor
-  en2::config_io_mode(io_mode::output); //for pwm control of left motor
   right_motor::enable();
   left_motor::enable();
 }
 
 void setupEncoderWheel()
 {
- 
-  left_wheel::enable();
-  right_wheel::enable();
   left_encoder::enable();
   right_encoder::enable();
+  
+  // Create interrupts
+  // Interrupts for Encoder (right and left encoder _a)
 
+  // Pure Arduino Interrupt Setup
+  attachInterrupt(digitalPinToInterrupt(3), encoderCountR, CHANGE); //ISR for Right Motor
+  attachInterrupt(digitalPinToInterrupt(2), encoderCountL, CHANGE); //ISR for Left Motor
+  
+  // OOP Setup 
+  //attachInterrupt(digitalPinToInterrupt(2), right_encoder::count(), CHANGE); //ISR for Right Motor
+  //attachInterrupt(digitalPinToInterrupt(3), left_encoder::count(), CHANGE); //ISR for Left Motor
+  
 }
 
 // Timing for hardware tests
 unsigned long motor_duration = 5000;
-unsigned long motor_timer = 0;
+unsigned long motor_timer = 0.0;
 unsigned long led_timer = 0;
-logic_level ledLogic = logic_level::low;  // LED logic level (to be toggled)
+logic_level ledLogic = logic_level::low;  // LED logic level set LOW as default (to be toggled)
 
 // Units for Encoder + Motor + Wheel (using C++ API)
-units::percentage mFullSpeed(25.0);
-units::percentage mHalfSpeed(50.0);
-
+units::percentage mFullSpeed(75.0);
+units::percentage mHalfSpeed(30.0);
+units::percentage mtestSpeed(15.0);
 
 void setup() {
 
@@ -60,6 +144,10 @@ void setup() {
   setupDigitalPins();
   setupMotor(); 
   setupEncoderWheel();
+
+  // Callback for interrupt
+  //void (*callback)() = &encoderInterrupt;
+  
   delay(100);
 }
 
@@ -144,32 +232,52 @@ void loop() {
 
       break;
 
+   //2. Run motor 1 at full speed in the forward direction for 5 seconds (2), 
+   //display the readings of the associated encoder on the serial monitor of Arduino (2), 
+   //and display the distance travelled by the wheel
+
     case (TEST_2):
     
-      if (millis() - motor_timer > motor_duration)
-      {
-        motor_timer = millis();    
+      right_motor::forward(mFullSpeed);
+      //Print encoder count + distance travelled by wheel
+      int rEncoderCount = right_encoder::count();
+      Serial.print("rEncoder: "); Serial.println(rEncoderCount);
+      //Serial.print("rWheel_dist: "); right_wheel::position();          
+       
+      if ((millis() - motor_timer) > motor_duration)
+      {  
+        motor_timer = millis();
         right_motor::stop();  
-        delay(15);
+        //Serial.println("Stopped R Motor");
+        delay(2000);
         system_mode = CHOOSE_TEST;
       }
-    
-      right_motor::forward();   
       
       break;
 
+   // 3. Run motor 2 at half speed in the backward direction for 5 seconds (2), 
+   // display the readings of the associated encoder on the serial monitor of Arduino (2), 
+   // and display the distance travelled by the wheel
+   
     case (TEST_3):
     
-      if (millis() - motor_timer > motor_duration)
-      {
-        motor_timer = millis();    
-        left_motor::stop();  
-        delay(15);
-        system_mode = CHOOSE_TEST;
-      }
-    
-      left_motor::backward();   
+       left_motor::backward(mHalfSpeed); //half speed = 50.0
+
+      //Print encoder count + distance travelled by wheel
+      Serial.print("lEncoder "); Serial.print(eCountL);
       
+      //units::millimeters lDistance = left_wheel::position();    
+      Serial.print(" | lWheel:dist: "); Serial.println(eCountL);        
+  
+      if ((millis() - motor_timer) > motor_duration)
+      {  
+        motor_timer = millis();
+        left_motor::stop();
+        Serial.println("Left Motor Stopped");  
+        resetEncoderL();
+        delay(3000);
+      }
+            
       break;
 
    case (TEST_4):
@@ -208,67 +316,97 @@ void loop() {
       else
       {
         ledLogic = logic_level::low;
-      }
-      
+      }      
       statusGreen::write(ledLogic);            
     }
     
   #endif
 
   //2. Test Motor 1 Functionality
-
-  /*
-   * 2. Run motor 1 at full speed in the forward direction for 5 seconds (2), 
-   * display the readings of the associated encoder on the serial monitor of Arduino (2), 
-   * and display the distance travelled by the wheel
-   */
+  
+   //2. Run motor 1 at full speed in the forward direction for 5 seconds (2), 
+   //display the readings of the associated encoder on the serial monitor of Arduino (2), 
+   //and display the distance travelled by the wheel
   
   #ifdef MOTOR_1_TEST
 
-    right_motor::forward(mFullSpeed); //full speed = 100.0; (25.0 atm)
-    delay(1000);
-    right_motor::backward(mFullSpeed);
-    delay(1000);
-    right_motor::stop();
+    right_motor::forward(mHalfSpeed);
+
+    //Print encoder count + distance travelled by wheel
+    Serial.print("rEncoder: "); Serial.print(-eCountR);
+
+    // OOP version
+    //units::millimeters rDistance = right_wheel::position(); 
+    //Serial.print(" | rWheel: "); Serial.println(rDistance.count());  
+       
+    Serial.print(" | rWheel(mm): "); Serial.println(abs(-(eCountR/COUNTS_PER_REV)*WHEEL_CIRCUM)); 
+    
+    if ((millis() - motor_timer) > motor_duration) //motor_duration
+    {  
+      motor_timer = millis();
+      right_motor::stop();
+      Serial.println("Stopped R Motor");   
+      //clear encoder  
+      resetEncoderR();
+      if (eCountR != 0) eCountR = 0;
+      delay(3000);  
+    }
 
     /*
-    if (millis() - motor_timer > motor_duration)
-    {
-      motor_timer = millis();    
-      right_motor::stop();  
-    }
-    
-    right_motor::forward(mFullSpeed);          
+    // Checking voltage sent to motors
+    units::percentage twenty(20.0);
+    units::percentage forty(40.0);
+    units::percentage sixty(60.0);
+    units::percentage eighty(80.0);
+
+    right_motor::forward(twenty);
+    delay(2000);
+    right_motor::stop();
+    delay(2000);
+    right_motor::forward(forty);
+    delay(2000);
+    right_motor::stop();
+    delay(2000);
+    right_motor::forward(sixty);
+    delay(2000);
+    right_motor::stop();
+    delay(2000);
+    right_motor::forward(eighty);
+    delay(2000);
+    right_motor::stop();
+    delay(10000);
     */
-    
   #endif
    
   //3. Test Motor 2 Functionality
-
-  /*
-   * 2. Run motor 2 at half speed in the backward direction for 5 seconds (2), 
-   * display the readings of the associated encoder on the serial monitor of Arduino (2), 
-   * and display the distance travelled by the wheel
-   */
+  
+   // 3. Run motor 2 at half speed in the backward direction for 5 seconds (2), 
+   // display the readings of the associated encoder on the serial monitor of Arduino (2), 
+   // and display the distance travelled by the wheel
 
   #ifdef MOTOR_2_TEST
+    
+    left_motor::backward(mHalfSpeed); //half speed = 50.0
 
-    right_motor::backward(mHalfSpeed); //half speed = 50.0
-    delay(100);
-    right_motor::forward(mHalfSpeed);
-    delay(100);
-    right_motor::stop();
+    //Print encoder count + distance travelled by wheel
+    Serial.print("lEncoder: "); Serial.print(eCountL);
 
-    /*
-    if (millis() - motor_timer > motor_duration)
-    {
-      motor_timer = millis();    
-      left_motor::stop();  
+    // OOP Version
+    //units::millimeters lDistance = left_wheel::position();    
+    //Serial.print(" | lWheel:dist: "); Serial.println(lDistance.count());  
+
+    Serial.print(" | lWheel(mm): "); Serial.println(abs((eCountL/COUNTS_PER_REV)*WHEEL_CIRCUM)); 
+
+    if ((millis() - motor_timer) > motor_duration)
+    {  
+      motor_timer = millis();
+      left_motor::stop();
+      Serial.println("Left Motor Stopped");  
+      resetEncoderL();
+      if (eCountL != 0) eCountL = 0;
+      delay(3000);
     }
-    
-    left_motor::backward(mHalfSpeed);          
-    */
-    
+       
   #endif
 
   //4. Read Left Encoder
@@ -282,9 +420,25 @@ void loop() {
    */
 
   #ifdef L_ENCODER_TEST
-  
-    l_encoder::count();
+
+    int angle = LEFT_WHEEL_ANGLE; // aiming for +/- 15 degrees
+    //~ 1 encoder tick = 5 degrees -> 1800 / 360 = ~5
     
+    if (angle > 0) left_motor::forward(mtestSpeed); 
+    else left_motor::backward(mtestSpeed);
+    
+    Serial.print("lEncoder: "); Serial.print(eCountL);
+    Serial.print(" Angle: "); Serial.println(abs(eCountL * 5));
+
+    // Calculation of "error" given the setpoint
+    if ( ((abs(angle) - abs((eCountL * 5))) <= ANGLE_OFFSET) || abs((eCountL * 5)) >= (abs(angle) + ANGLE_OFFSET))
+    {
+       left_motor::stop();
+       resetEncoderL();
+       sprintf(angle_array, "%d\n", angle);
+       delay(100);
+    } 
+
   #endif
 
   //5. Read RightWheel Encoder
@@ -299,10 +453,28 @@ void loop() {
 
   #ifdef R_ENCODER_TEST
 
-  
+    int angle = RIGHT_WHEEL_ANGLE;
+    //~ 1 encoder tick = 5 degrees
+    
+    if (angle > 0)right_motor::forward(mtestSpeed); 
+    else right_motor::backward(mtestSpeed);
+    
+    Serial.print("REncoder: "); Serial.print(eCountR);
+    Serial.print(" Angle: "); Serial.println(abs(eCountR * 5));
+
+
+    // Calculation of "error" given the setpoint
+    if ( ((abs(angle) - abs((eCountR * 5))) <= ANGLE_OFFSET) || abs((eCountR * 5)) >= (abs(angle) + ANGLE_OFFSET))
+    {
+       right_motor::stop();
+       resetEncoderR();
+       sprintf(angle_array, "%d\n", angle);
+       delay(100);
+    } 
+
 
   #endif
 
-  delay(15);
+  delay(50);
 
 }
