@@ -4,7 +4,8 @@
 #include "hardware_definition.h"
 
 #define PI 3.14
-#define WHEEL_CIRCUM 240 //in mm
+#define WHEEL_CIRCUM 240.0 //in mm
+#define COUNTS_PER_REV 16.0
 
 using pin_t = uint8_t; //uint8_t is a byte
 
@@ -111,14 +112,16 @@ static auto hardware::digital_pin<pin>::pwm_write (units::percentage duty_cycle)
 {
 
     //overloaded / operator. allow for unit_type / double multiplication
-    analogWrite(pin,(double(duty_cycle.count()) * (1/100.0) * 255));
+    analogWrite(pin,duty_cycle.count() * (1/100.0) * 255);
 }
 
 template <pin_t pin>
 static auto hardware::digital_pin<pin>::pulse_length (logic_level state = logic_level::high,
 units::microseconds timeout = 1000000_us) -> units::microseconds
 {
-    //using Arduino pulseIn()
+
+    //TODO!!
+
 }
 
 // ------------------- 2) Implementation of analog_pin Class -------------------
@@ -169,6 +172,18 @@ static auto hardware::analog_pin<base>::set_analog_reference (analog_reference r
     }
 }
 
+template <typename base>
+static auto hardware::analog_pin<base>::analog_read () -> units::volts
+{
+
+    //units::volts analogVoltage(0.0);
+    //analogVoltage.count() = analogRead(analog_pin<base>) * (5.0/1024);
+
+    //return analogVoltage.count();
+
+}
+
+
 // ------------------- 3) Implementation of motor Class -------------------
 
     /**
@@ -206,30 +221,24 @@ template <class pin_a, class pin_b>
 static auto hardware::motor<pin_a,pin_b>::forward (units::percentage velocity) -> void
 {
 
-    drive_direction driveD = drive_direction::forward;
-
     //send one motor to 1 and one to 0
     pin_a::write(logic_level::high);
     pin_b::write(logic_level::low);
 
     // Logic to determine if motor 1 or motor 2
     // match enable pin with designated motor?
-
-    //in1 = digital_pin<7U> for motor1
-    //in3 = digital_pin<11U> for motor2
-
     if (pin_a::read() == logic_level::high && pins::in1::read() == logic_level::high)
     {
 
         hardware::en1::pwm_write(velocity);
-        Serial.println("Right M Forward");
+        //Serial.println("Right M Forward");
 
     }
     else //other motor is desired
     {
 
         hardware::en2::pwm_write(velocity);
-        Serial.println("Left M Forward");
+        //Serial.println("Left M Forward");
 
     }
 }
@@ -237,8 +246,6 @@ static auto hardware::motor<pin_a,pin_b>::forward (units::percentage velocity) -
 template <class pin_a, class pin_b>
 static auto hardware::motor<pin_a,pin_b>::backward (units::percentage velocity) -> void
 {
-
-    drive_direction driveD = drive_direction::backward;
 
     //send one motor to 0 and one to 1
     pin_a::write(logic_level::low);
@@ -248,18 +255,25 @@ static auto hardware::motor<pin_a,pin_b>::backward (units::percentage velocity) 
     {
 
         hardware::en1::pwm_write(velocity);
-        Serial.println("Right M Backward");
+        //Serial.println("Right M Backward");
     }
     else //other motor is desired
     {
         hardware::en2::pwm_write(velocity);
-        Serial.println("Left M Backward");
+        //Serial.println("Left M Backward");
     }
 
 }
 
 // ------------------- 4) Implementation of encoder Class -------------------
 
+// Encoder variable for ISR using OOP
+using encoder_count = int;
+volatile byte aCount;
+volatile encoder_count eCounter; // Encoder count used for OOP
+boolean Direction = true; // Rotation direction
+
+// For each encoder:
 // Pin a = interrupt
 // Pin b = digital pin
 
@@ -270,7 +284,7 @@ static auto hardware::encoder<pin_a,pin_b>::enable () -> void
     // enable encoder pins
     pin_a::config_io_mode (io_mode::input);
     pin_b::config_io_mode (io_mode::input);
-    // pin_a is set up as interrupt for each encoder (left and right)
+    Direction = true;
 
 }
 
@@ -279,13 +293,44 @@ static auto hardware::encoder<pin_a,pin_b>::enable () -> void
      * \return current count.
      */
 
+// This function was essentially a conversion from pure Arduino to OOP
+// However, this function is believed to be the ISR that is called whenever
+// the encoder pin is interrupted, should ideally be a void return value.
 template <typename pin_a, typename pin_b>
 static auto hardware::encoder<pin_a,pin_b>::count () -> encoder_count
 {
 
     //alias of encoder_count = int;
-    // Get count from interrupt of A and B channels
+    // Get count from interrupt of A and B channels?
 
+    encoder_count Lstate = encoder_count(pin_a::read());
+
+    //Serial.print("A: "); Serial.println(Lstate);
+
+    if((aCount == 0) && Lstate == 1)
+    {
+        encoder_count encoder_b = encoder_count(pin_b::read());
+
+        //Serial.print("B: "); Serial.println(encoder_b);
+        //Serial.println("");
+
+        if(encoder_b == 0 && Direction)
+        {
+          Direction = false; //Reverse
+
+        }
+        else if(encoder_b == 1 && !Direction)
+        {
+          Direction = true;  //Forward
+        }
+    }
+
+    aCount = Lstate;
+
+    if(!Direction)  eCounter++;
+    else  eCounter--;
+
+    return eCounter;
 
 }
 
@@ -297,7 +342,7 @@ template <typename pin_a, typename pin_b>
 static auto hardware::encoder<pin_a,pin_b>::reset () -> void
 {
 
-
+    eCounter = 0;
 
 }
 
@@ -309,14 +354,11 @@ template <typename pin_a, typename pin_b>
 static auto hardware::wheel<pin_a,pin_b>::position () -> units::millimeters
 {
 
-    //PI
-    //WHEEL_CIRCUM
+   units::millimeters wheelDistance(1.0);
 
-    //Distance Travelled = (Encoder Count / 360) * WHEEL_CIRCUM
+   //(double(eCounter) / COUNTS_PER_REV) * WHEEL_CIRCUM;
 
-    units::millimeters robotDistance(0.0); //millimeters is a double type
-
-    //return units::millimeters robotDistance.count();
+   return wheelDistance;
 
 }
 
@@ -350,9 +392,9 @@ static auto hardware::interrupt<pin>::detach_interrupt () -> void
 // Digital/Analog I/O
 
 template class hardware::digital_pin<13U>;
-template class hardware::digital_pin<8U>;
-template class hardware::digital_pin<6U>; //LED fade test pin
-template class hardware::analog_pin<hardware::digital_pin<1U>>; //for analog test
+template class hardware::digital_pin<7U>;
+template class hardware::digital_pin<5U>; //LED fade test pin
+template class hardware::analog_pin<hardware::digital_pin<1U>>;
 
 // Motor Driver (H-bridge)
 
