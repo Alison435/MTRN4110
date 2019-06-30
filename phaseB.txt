@@ -23,10 +23,10 @@
 //int verticalWalls[ROWS_wall][COLS_wall+1];
 
 // vertical walls array
-  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1}, {1,1,1,1}, {1,1,0,1}};               //verticalWalls[3][4]
+  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1}, {1,0,1,1}, {1,1,0,1}};               //verticalWalls[3][4]
                                                                                   
   // horizontal walls array                                                 
-  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1}, {0,1,0}, {0,0,0},{1,1,1} };            //horizontalWalls[4][3]
+  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1}, {0,0,0}, {0,1,0},{1,1,1} };            //horizontalWalls[4][3]
                        
 
 //Mouse Stuff  
@@ -77,10 +77,23 @@ void setup() {
   Serial.begin(9600);
   //Serial1.begin(9600);
 
+  //GOOD
+  //get maze layout
   //Get_Maze_Layout();
-  //Get_Dir();
+  
+  //GOOD
+  //get intial mouse direction
+  Get_Dir();
+  
+  //GOOD
+  //get initial starting position
   Get_Start();
+
+  //GOOD
+  //carry out flood fill on maze
   flood_fill();
+
+  //print maze
   Print_Maze();
 
 }
@@ -203,42 +216,49 @@ void Print_Maze(){
                 {
                     if(verticalWalls[i/2][j/2] == true)
                     {
-                        Serial.print("|   ");
+                        Serial.print("|");
                     }
                     else
                     {
-                        Serial.print("    ");
+                        Serial.print(" ");
                     }
             }
 
              //Add Flood Fill Values
-//                if(i%2 == 1 && j%2== 1)
-//                {
-//                    if((i)/2 == mouseSRow && (j)/2 == mouseSColumn)
-//                    {
-//                        if(mouseHeading == NORTH)
-//                        {
-//                            Serial.print(" N ");
-//                        }
-//                        else if(mouseHeading == EAST)
-//                        {
-//                            Serial.print("E");
-//                        }
-//                        else if(mouseHeading == SOUTH)
-//                        {
-//                            Serial.print("S");
-//                        }
-//                        else if(mouseHeading == WEST)
-//                        {
-//                            Serial.print("W");
-//                        }
-//                    }
-//
-//                }
+                if(i%2 == 1 && j%2== 1)
+                {
+                    if((i-1)/2 == mouseSRow && (j-1)/2 == mouseSColumn)
+                    {
+                        if(mouseHeading == NORTH)
+                        {
+                            Serial.print(" N ");
+                        }
+                        else if(mouseHeading == EAST)
+                        {
+                            Serial.print(" E ");
+                        }
+                        else if(mouseHeading == SOUTH)
+                        {
+                            Serial.print(" S ");
+                        }
+                        else if(mouseHeading == WEST)
+                        {
+                            Serial.print(" W ");
+                        }
+                    } else
+                    {
+                        int value = values[(i-1)/2][(j-1)/2];
+                        Serial.print(" ");
+                        Serial.print(value);
+                        Serial.print(" ");
+
+                    }
+
+                }
             }
              Serial.print("\n");
         }
-       // Serial.print("\n");
+        Serial.print("\n");
     }
 
 
