@@ -1,6 +1,5 @@
 // Testing how to make robot drive straight -> 2 Methods
 // 1. Using IMU for P control (TRYING THIS ONE ATM)
-// 2. Using encoders (master and slave idea) for P 
 
 // Testing how to make robot drive straight
 // using proportional control
