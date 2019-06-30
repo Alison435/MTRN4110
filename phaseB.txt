@@ -23,7 +23,7 @@
 //int verticalWalls[ROWS_wall][COLS_wall+1];
 
 // vertical walls array
-  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1}, {1,1,1,1}, {1,1,0,0}};               //verticalWalls[3][4]
+  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1}, {1,1,1,1}, {1,1,0,1}};               //verticalWalls[3][4]
                                                                                   
   // horizontal walls array                                                 
   int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1}, {0,1,0}, {0,0,0},{1,1,1} };            //horizontalWalls[4][3]
@@ -81,7 +81,7 @@ void setup() {
   //Get_Dir();
   Get_Start();
   flood_fill();
-  //Print_Maze();
+  Print_Maze();
 
 }
 
@@ -207,38 +207,38 @@ void Print_Maze(){
                     }
                     else
                     {
-                        Serial.print("     ");
+                        Serial.print("    ");
                     }
             }
 
              //Add Flood Fill Values
-                if(i%2 == 1 && j%2== 1)
-                {
-                    if((i)/2 == mouseSRow && (j)/2 == mouseSColumn)
-                    {
-                        if(mouseHeading == NORTH)
-                        {
-                            Serial.print(" N ");
-                        }
-                        else if(mouseHeading == EAST)
-                        {
-                            Serial.print("E");
-                        }
-                        else if(mouseHeading == SOUTH)
-                        {
-                            Serial.print("S");
-                        }
-                        else if(mouseHeading == WEST)
-                        {
-                            Serial.print("W");
-                        }
-                    }
-
-                }
+//                if(i%2 == 1 && j%2== 1)
+//                {
+//                    if((i)/2 == mouseSRow && (j)/2 == mouseSColumn)
+//                    {
+//                        if(mouseHeading == NORTH)
+//                        {
+//                            Serial.print(" N ");
+//                        }
+//                        else if(mouseHeading == EAST)
+//                        {
+//                            Serial.print("E");
+//                        }
+//                        else if(mouseHeading == SOUTH)
+//                        {
+//                            Serial.print("S");
+//                        }
+//                        else if(mouseHeading == WEST)
+//                        {
+//                            Serial.print("W");
+//                        }
+//                    }
+//
+//                }
             }
              Serial.print("\n");
         }
-        Serial.print("\n");
+       // Serial.print("\n");
     }
 
 
@@ -339,9 +339,51 @@ void flood_fill(){
        if(row == mouseSRow && col == mouseSColumn){
          values[mouseSRow][mouseSColumn] = 0;
        }else {
-         values[row][col] = 5;
+         values[row][col] = N;
        }
     }
+  }
+ 
+//  //Do floodfill
+  while(mazeValueChanged != 0){
+    mazeValueChanged = 0;
+    for(int FloodR = 0; FloodR < ROWS_wall; FloodR++){
+        for(int FloodC = 0; FloodC < COLS_wall; FloodC++){
+            if(values[FloodR][FloodC] == CurrentExploredValue){
+                //check NORTH
+                if(horizontalWalls[FloodR][FloodC] == 0){
+                    if(values[FloodR-1][FloodC] == N){
+                        values[FloodR-1][FloodC] = values[FloodR][FloodC] + 1;
+                        mazeValueChanged = 1;
+                    }
+                }
+                
+                if(verticalWalls[FloodR][FloodC+1] == 0){ //check EAST
+                    if(values[FloodR][FloodC+1] == N){
+                        values[FloodR][FloodC+1] = values[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;
+                    }
+                }
+                
+                if(horizontalWalls[FloodR+1][FloodC] == 0){ //checl SOUTH
+                    if(values[FloodR+1][FloodC] == N){
+                        values[FloodR+1][FloodC] = values[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;
+                    }
+                }
+                
+                if(verticalWalls[FloodR][FloodC] == 0){ //check WEST
+                    if(values[FloodR][FloodC-1] == N){
+                        values[FloodR][FloodC-1] = values[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;                 
+                    }
+                }
+                
+            }
+            
+        }
+    }
+    CurrentExploredValue += 1;
   }
 
 //////////////////////////
@@ -352,45 +394,14 @@ void flood_fill(){
     for(int col = 0; col < COLS_wall; col++){
          Serial.print(values[row][col]);
     }
- }
-  
-  
-///////////////////////////////
-//  
-//  //Do floodfill
-//  while(mazeValueChanged != 0){
-//    mazeValueChanged = 0;
-//    for(int FloodR = 0; FloodR < ROWS_wall; FloodR++){
-//        for(int FloodC = 0; FloodC < COLS_wall; FloodC++){
-//            if(values[FloodR][FloodC] == CurrentExploredValue){
-//                //check NORTH
-//                if(horizontalWalls[FloodR][FloodC] == 0){
-//                    if(values[FloodR-1][FloodC] == N){
-//                        values[FloodR-1][FloodC] = values[FloodR][FloodC]+1;
-//                        mazeValueChanged = 1;
-//                    }
-//                } else if(verticalWalls[FloodR][FloodC+1] == 0){ //check EAST
-//                    if(values[FloodR][FloodC+1] == N){
-//                        values[FloodR][FloodC+1] = values[FloodR][FloodC]+1;
-//                        mazeValueChanged = 1;
-//                    }
-//                } else if(horizontalWalls[FloodR+1][FloodC] == 0){ //checl SOUTH
-//                    if(values[FloodR+1][FloodC] == N){
-//                        values[FloodR+1][FloodC] = values[FloodR][FloodC]+1;
-//                        mazeValueChanged = 1;
-//                    }
-//                } else if(verticalWalls[FloodR][FloodC] == 0){ //check WEST
-//                    if(values[FloodR][FloodC-1] == N){
-//                        values[FloodR][FloodC-1] = values[FloodR][FloodC]+1;
-//                        mazeValueChanged = 1;                 
-//                    }
-//                }
-//                CurrentExploredValue = CurrentExploredValue + 1;
-//            }
-//        }
-//    }
-//  }
+ } 
 
+//Print CurrentExploredValue at end
+    Serial.print("\n");
+//    Serial.print( CurrentExploredValue);
+//    Serial.print("\n");
+
+///////////////////////////////
 
 }
    
