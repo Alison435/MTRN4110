@@ -198,6 +198,8 @@ void Get_Maze_Layout(){
 
 //Printing the Maze
 void Print_Maze(){
+
+           
            for(int i = 0;i < 2*ROWS_wall+1;i++)
            {
             for(int j = 0;j < 2*COLS_wall+1;j++)
@@ -229,6 +231,8 @@ void Print_Maze(){
             }
 
              //Add Flood Fill Values
+
+              
                 if(i%2 == 1 && j%2== 1)
                 {
                     if((i-1)/2 == mouseSRow && (j-1)/2 == mouseSColumn)
@@ -252,22 +256,43 @@ void Print_Maze(){
                     } else
                     {
                         int value = values[(i-1)/2][(j-1)/2];
+                        for(int count = 0; count <= Max_Value_Goal; count++){
+                            if(values[((i-1)/2)][((j-1)/2)] == count){
 
-                        while( Max_Value_Goal != 0){
-                          if(values[((i-1)/2)][((j-1)/2)] == Max_Value_Goal){
-                            Serial.print(" ");
-                            Serial.print(value);
-                            Serial.print(" ");
-                          } else {
-                            Serial.print("   ");
-                          }                          
+                             //east then west
+                             if(  (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)+1]) == values[(i-1)/2][(j-1)/2] + 1))  ||   (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)-1]) == values[(i-1)/2][(j-1)/2] + 1))              ){
+                                
+  
+                                  if(  (values[((i-1)/2)][((j-1)/2)+1] == values[(i-1)/2][(j-1)/2] + 1)   )    {  //east
+                                      values[((i-1)/2)][((j-1)/2)+1] = 55;
+                                  } else if(   (values[((i-1)/2)][((j-1)/2)-1] == values[(i-1)/2][(j-1)/2] + 1)   ){ //west
+                                      values[((i-1)/2)][((j-1)/2)-1] = 55;
+                                  }
+  
+                                  Serial.print(" ");
+                                  Serial.print(value);
+                                  Serial.print(" ");
+                                  
+                             } else {
+                                  Serial.print(" ");
+                                  Serial.print(value);
+                                  Serial.print(" ");
+                             }
+
+                             
+                            }
+
+
+
+
+
+                                                          
                         }
-
-
 
                     }
 
                 }
+               
             }
              Serial.print("\n");
         }
