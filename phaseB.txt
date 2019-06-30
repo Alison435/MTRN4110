@@ -259,28 +259,32 @@ void Print_Maze(){
                         for(int count = 0; count <= Max_Value_Goal; count++){
                             if(values[((i-1)/2)][((j-1)/2)] == count){
 
-                             //east then west
-                             if(  (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)+1]) == values[(i-1)/2][(j-1)/2] + 1))  ||   (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)-1]) == values[(i-1)/2][(j-1)/2] + 1))              ){
-                                
-  
-                                  if(  (values[((i-1)/2)][((j-1)/2)+1] == values[(i-1)/2][(j-1)/2] + 1)   )    {  //east
-                                      values[((i-1)/2)][((j-1)/2)+1] = 55;
-                                  } else if(   (values[((i-1)/2)][((j-1)/2)-1] == values[(i-1)/2][(j-1)/2] + 1)   ){ //west
-                                      values[((i-1)/2)][((j-1)/2)-1] = 55;
-                                  }
-  
-                                  Serial.print(" ");
-                                  Serial.print(value);
-                                  Serial.print(" ");
-                                  
-                             } else {
-                                  Serial.print(" ");
-                                  Serial.print(value);
-                                  Serial.print(" ");
-                             }
+                                 //east then west
+                                 if(  (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)+1]) == values[(i-1)/2][(j-1)/2] + 1))  ||   (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)-1]) == values[(i-1)/2][(j-1)/2] + 1))              ){
+                                    
+      
+                                      if(  (values[((i-1)/2)][((j-1)/2)+1] == values[(i-1)/2][(j-1)/2] + 1)   )    {  //east
+                                          values[((i-1)/2)][((j-1)/2)+1] = 55; //assigned to explored but not shortest
+                                      } else if(   (values[((i-1)/2)][((j-1)/2)-1] == values[(i-1)/2][(j-1)/2] + 1)   ){ //west
+                                          values[((i-1)/2)][((j-1)/2)-1] = 55; //assigned to explored but not shortest
+                                      }
+      
+                                      Serial.print(" ");
+                                      Serial.print(value);
+                                      Serial.print(" ");
+                                      
+                                 } else {
+                                      Serial.print(" ");
+                                      Serial.print(value);
+                                      Serial.print(" ");
+                                 }
 
                              
+                            } else if(values[((i-1)/2)][((j-1)/2)] == 55){
+                                Serial.print("i");
+                              
                             }
+                         
 
 
 
