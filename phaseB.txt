@@ -23,10 +23,10 @@
 //int verticalWalls[ROWS_wall][COLS_wall+1];
 
 // vertical walls array
-  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1}, {1,0,1,1}, {1,1,0,1}};               //verticalWalls[3][4]
+  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1}, {1,0,1,1}, {1,1,0,1}};               //verticalWalls[5][10]
                                                                                   
   // horizontal walls array                                                 
-  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1}, {0,0,0}, {0,1,0},{1,1,1} };            //horizontalWalls[4][3]
+  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1}, {0,0,0}, {0,1,0},{1,1,1} };            //horizontalWalls[6][9]
                        
 
 //Mouse Stuff  
@@ -38,8 +38,12 @@ int mouseHeading;
 int values[ROWS_wall][COLS_wall];
 
 //ONLY FOR 3X3 MAZE FOR NOW
-int goalRow = 1;
+
+int goalRow = 2;
 int goalCol = 1;
+
+//Maximum value is the goal value
+int Max_Value_Goal;
 
 
 
@@ -62,7 +66,7 @@ int v = 0;
 ////////////////////////////////////
 //Function Declarations
 void Print_Maze();
-//void Get_Maze_Layout();
+void Get_Maze_Layout();
 void Get_Robot_Pos();
 void Get_Start();
 void Get_Dir();
@@ -248,9 +252,18 @@ void Print_Maze(){
                     } else
                     {
                         int value = values[(i-1)/2][(j-1)/2];
-                        Serial.print(" ");
-                        Serial.print(value);
-                        Serial.print(" ");
+
+                        while( Max_Value_Goal != 0){
+                          if(values[((i-1)/2)][((j-1)/2)] == Max_Value_Goal){
+                            Serial.print(" ");
+                            Serial.print(value);
+                            Serial.print(" ");
+                          } else {
+                            Serial.print("   ");
+                          }                          
+                        }
+
+
 
                     }
 
@@ -406,6 +419,10 @@ void flood_fill(){
     CurrentExploredValue += 1;
   }
 
+  //Store value of goal
+  Max_Value_Goal = values[goalRow][goalCol];
+
+
 //////////////////////////
 //testing
 //print contents of values array
@@ -418,9 +435,13 @@ void flood_fill(){
 
 //Print CurrentExploredValue at end
     Serial.print("\n");
-//    Serial.print( CurrentExploredValue);
-//    Serial.print("\n");
+//  Serial.print( CurrentExploredValue);
+//  Serial.print("\n");
 
+
+//Print value of goal
+//  Serial.print(Max_Value_Goal);
+//  Serial.print("\n"); 
 ///////////////////////////////
 
 }
