@@ -7,8 +7,8 @@
 
 //////////////////////////////////
 
-#define ROWS_wall 3
-#define COLS_wall 3
+#define ROWS_wall 5
+#define COLS_wall 9
 #define H_size (ROWS_wall+1)*COLS_wall  //54
 #define V_size ROWS_wall*(COLS_wall+1) //50
 #define NORTH 0
@@ -23,10 +23,23 @@
 //int verticalWalls[ROWS_wall][COLS_wall+1];
 
 // vertical walls array
-  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,1}, {1,0,1,1}, {1,1,0,1}};               //verticalWalls[5][10]
+  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1}, 
+                                                  {1,1,1,0,0,1,0,1,1,1}, 
+                                                  {1,0,0,1,0,0,1,1,1,1}, 
+                                                  {1,0,0,0,1,0,0,0,0,1}, 
+                                                  {1,0,1,0,0,0,1,0,1,1}, 
+                                                                };
+                                     //verticalWalls[5][10]
                                                                                   
   // horizontal walls array                                                 
-  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1}, {0,0,0}, {0,1,0},{1,1,1} };            //horizontalWalls[6][9]
+  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
+                                                     {0,0,1,1,0,1,1,0,0}, 
+                                                     {0,1,0,1,1,1,0,0,1},
+                                                     {1,0,1,1,0,1,0,0,0},
+                                                     {0,1,0,1,0,1,0,1,0},
+                                                     {1,1,1,1,1,1,1,1,1}
+                                                    
+                                                     };            //horizontalWalls[6][9]
                        
 
 //Mouse Stuff  
@@ -40,7 +53,7 @@ int values[ROWS_wall][COLS_wall];
 //ONLY FOR 3X3 MAZE FOR NOW
 
 int goalRow = 2;
-int goalCol = 1;
+int goalCol = 4;
 
 //Maximum value is the goal value
 int Max_Value_Goal;
@@ -265,6 +278,10 @@ void Print_Maze(){
       
                                       if(  (values[((i-1)/2)][((j-1)/2)+1] == values[(i-1)/2][(j-1)/2] + 1)   )    {  //east
                                           values[((i-1)/2)][((j-1)/2)+1] = 55; //assigned to explored but not shortest
+                                          
+//                                          Serial.print((i-1)/2);
+//                                          Serial.print(((j-1)/2)+1);
+
                                       } else if(   (values[((i-1)/2)][((j-1)/2)-1] == values[(i-1)/2][(j-1)/2] + 1)   ){ //west
                                           values[((i-1)/2)][((j-1)/2)-1] = 55; //assigned to explored but not shortest
                                       }
@@ -280,18 +297,15 @@ void Print_Maze(){
                                  }
 
                              
-                            } else if(values[((i-1)/2)][((j-1)/2)] == 55){
-                                Serial.print("i");
-                              
                             }
-                         
-
-
-
-
-
-                                                          
+                                                                      
                         }
+
+                        if(values[((i-1)/2)][((j-1)/2)] == 55) {
+                            Serial.print("x");  
+                        }
+
+                        
 
                     }
 
@@ -300,7 +314,7 @@ void Print_Maze(){
             }
              Serial.print("\n");
         }
-        Serial.print("\n");
+        //Serial.print("\n");
     }
 
 
