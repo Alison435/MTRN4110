@@ -22,6 +22,7 @@
 //int horizontalWalls[ROWS_wall+1][COLS_wall];
 //int verticalWalls[ROWS_wall][COLS_wall+1];
 
+
 // vertical walls array
   int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1}, 
                                                   {1,1,1,0,0,1,0,1,1,1}, 
@@ -40,6 +41,29 @@
                                                      {1,1,1,1,1,1,1,1,1}
                                                     
                                                      };            //horizontalWalls[6][9]
+                                                     
+/*
+// vertical walls array
+  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,2,0,1,0,0,0,0,1}, 
+                                                  {1,0,2,0,1,0,0,0,0,1}, 
+                                                  {1,0,2,0,1,0,0,0,0,1}, 
+                                                  {1,0,2,0,1,0,0,0,0,1}, 
+                                                  {1,0,2,0,1,0,0,0,0,1}, 
+                                                                };
+                                     //verticalWalls[5][10]
+                                     
+                                                                                  
+  // horizontal walls array                                                 
+  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
+                                                     {1,1,1,1,1,1,1,1,1}, 
+                                                     {0,0,0,0,0,0,0,0,0},
+                                                     {2,2,2,2,2,2,2,2,2},
+                                                     {1,1,1,1,1,1,1,1,1},
+                                                     {1,1,1,1,1,1,1,1,1}
+                                                    
+                                                     };            //horizontalWalls[6][9]
+*/
+
                        
 
 //Mouse Stuff  
@@ -222,11 +246,13 @@ void Print_Maze(){
                 {
                     if(horizontalWalls[i/2][j/2] == true)
                     {
-                        Serial.print(" ---");
+                        Serial.print(" -----");
+                    } else if(horizontalWalls[i/2][j/2] == 2){
+                         Serial.print(" ***");
                     }
                     else
                     {
-                        Serial.print("    ");
+                        Serial.print("      ");
                     }
                 }
 
@@ -235,19 +261,25 @@ void Print_Maze(){
                 {
                     if(verticalWalls[i/2][j/2] == true)
                     {
-                        Serial.print("|");
-                    }
-                    else
-                    {
-                        Serial.print(" ");
+        
+                            Serial.print("|  ");
+
+
+                        }else if(verticalWalls[i/2][j/2] == 2){
+       
+                                Serial.print("* ");
+        
+                        }
+                        else
+                        {
+                            Serial.print("}  ");                    
                     }
             }
 
              //Add Flood Fill Values
 
               
-                if(i%2 == 1 && j%2== 1)
-                {
+                if(i%2 == 1 && j%2== 1){
                     if((i-1)/2 == mouseSRow && (j-1)/2 == mouseSColumn)
                     {
                         if(mouseHeading == NORTH)
@@ -269,52 +301,67 @@ void Print_Maze(){
                     } else
                     {
                         int value = values[(i-1)/2][(j-1)/2];
-                        for(int count = 0; count <= Max_Value_Goal; count++){
-                            if(values[((i-1)/2)][((j-1)/2)] == count){
+                      //  for(int count = 0; count <= Max_Value_Goal; count++){
+                        //    if(values[((i-1)/2)][((j-1)/2)] == count){
 
                                  //east then west
-                                 if(  (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)+1]) == values[(i-1)/2][(j-1)/2] + 1))  ||   (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)-1]) == values[(i-1)/2][(j-1)/2] + 1))              ){
-                                    
-      
-                                      if(  (values[((i-1)/2)][((j-1)/2)+1] == values[(i-1)/2][(j-1)/2] + 1)   )    {  //east
-                                          values[((i-1)/2)][((j-1)/2)+1] = 55; //assigned to explored but not shortest
-                                          
-//                                          Serial.print((i-1)/2);
-//                                          Serial.print(((j-1)/2)+1);
-
-                                      } else if(   (values[((i-1)/2)][((j-1)/2)-1] == values[(i-1)/2][(j-1)/2] + 1)   ){ //west
-                                          values[((i-1)/2)][((j-1)/2)-1] = 55; //assigned to explored but not shortest
-                                      }
-      
-                                      Serial.print(" ");
-                                      Serial.print(value);
-                                      Serial.print(" ");
+//                                 if(  (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)+1]) == values[(i-1)/2][(j-1)/2] + 1))  ||   (((values[((i-1)/2)-1][(j-1)/2] == values[(i-1)/2][(j-1)/2] + 1) && (values[(i-1)/2][((j-1)/2)-1]) == values[(i-1)/2][(j-1)/2] + 1))              ){
+//                                    
+//      
+//                                      if(  (values[((i-1)/2)][((j-1)/2)+1] == values[(i-1)/2][(j-1)/2] + 1)   )    {  //east
+//                                          values[((i-1)/2)][((j-1)/2)+1] = 55; //assigned to explored but not shortest
+//                                          
+////                                          Serial.print((i-1)/2);
+////                                          Serial.print(((j-1)/2)+1);
+//
+//                                      } else if(   (values[((i-1)/2)][((j-1)/2)-1] == values[(i-1)/2][(j-1)/2] + 1)   ){ //west
+//                                          values[((i-1)/2)][((j-1)/2)-1] = 55; //assigned to explored but not shortest
+//                                      }
+//      
+//                                      Serial.print("  ");
+                                        
+//                                      Serial.print(value);
+//                                      Serial.print("  ");
                                       
-                                 } else {
-                                      Serial.print(" ");
-                                      Serial.print(value);
-                                      Serial.print(" ");
-                                 }
+                                // } else { 
+
+                                if(values[((i-1)/2)][((j-1)/2)] < 10){
+                                    //Serial.print(" ");
+                                    Serial.print(value);
+                                    Serial.print("  ");                                  
+                                } else {
+                                    Serial.print(value);
+                                    Serial.print(" ");                                  
+                                }
+
+            
+
+                                // }
 
                              
                             }
                                                                       
-                        }
+                        } 
 
-                        if(values[((i-1)/2)][((j-1)/2)] == 55) {
-                            Serial.print("x");  
-                        }
+//                        if(values[((i-1)/2)][((j-1)/2)] == 55) {
+//                            Serial.print("   ");  
+//                        }  
+//                        
+//                        if(values[((i-1)/2)][((j-1)/2)] == (ROWS_wall*COLS_wall)-1){
+//                            Serial.print(" x "); 
+//                        }
 
                         
 
-                    }
+                   // }
 
-                }
+               // }
                
             }
+            
              Serial.print("\n");
         }
-        //Serial.print("\n");
+        Serial.print("\n");
     }
 
 
