@@ -248,7 +248,7 @@ void Print_Maze(){
                     {
                         Serial.print(" -----");
                     } else if(horizontalWalls[i/2][j/2] == 2){
-                         Serial.print(" ***");
+                         Serial.print(" *****");
                     }
                     else
                     {
@@ -260,25 +260,18 @@ void Print_Maze(){
                 if(i%2 == 1 && j%2 == 0)
                 {
                     if(verticalWalls[i/2][j/2] == true)
-                    {
-        
+                    {      
                             Serial.print("|  ");
-
-
                         }else if(verticalWalls[i/2][j/2] == 2){
-       
-                                Serial.print("* ");
-        
+                                Serial.print("*  ");
                         }
                         else
                         {
-                            Serial.print("}  ");                    
+                            Serial.print("   ");                    
                     }
             }
 
              //Add Flood Fill Values
-
-              
                 if(i%2 == 1 && j%2== 1){
                     if((i-1)/2 == mouseSRow && (j-1)/2 == mouseSColumn)
                     {
