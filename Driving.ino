@@ -11,16 +11,49 @@
 using namespace hardware;
 
 // Demonstrator defined turn for Move #2
-#define ROTATION 90 //or -90
+int desiredRotation; //90 or -90 input at serial (through Bluetooth)
+
+// Motor/Wheel parameters
+#define COUNT_PER_REV       1920  // 16 CPR * 120:1 gear ratio
+#define CIRCUM              240.0 // mm
+#define GEAR                120.0 // 120:1
+#define CELL_LENGTH         250.0 // mm
 
 // Isolated Test Defines (toggle ON.OFF) -> For Phase B
-//#define MOVE_CENTRES
+#define MOVE_CENTRES
 //#define SPOT_TURN
 //#define STRAIGHT
 //#define SQUARE_WAVE
 
-#define WHEEL_CIRCUM 240.0 //in mm
-#define COUNTS_PER_REV 720.0 //calibration = 1 count = 0.5 degrees
+//typedef enum robot_motion
+//{
+//  ROBOT_FORWARD,
+//  ROBOT_LEFT,
+//  ROBOT_RIGHT,  
+//} ROBOT_MOVE;
+//
+//typedef struct robot_movement
+//{
+//  ROBOT_MOVE  driveAction;
+//  double      setPWM;
+//} COMMAND_SEQ
+//
+//#define ROBOT_FORWARD   (pwm) {ROBOT_FORWARD,pwm}
+//#define ROBOT_LEFT      (pwm) {ROBOT_LEFT,pwm}
+//#define ROBOT_RIGHT     (pwm) {ROBOT_RIGHT,pwm}
+//
+//COMMAND_SEQ robotMovements[] = 
+//{
+//
+//}
+//
+//// Pointer to sequence for robot moves
+//COMMAND_SEQ *move_ref;
+
+bool robot_start = false; //will be set to true once LED sequence is finished
+int movement_num = 0;
+
+//move_ref = &robotMovements[movement_num]
 
 // Encoder variables for Phase A
 volatile int eCountR = 0; 
@@ -121,14 +154,17 @@ unsigned long motor_timer = 0.0;
 unsigned long led_timer = 0;
 logic_level ledLogic = logic_level::low;  // LED logic level set LOW as default (to be toggled)
 
-units::percentage mFullSpeed(75.0);
+units::percentage mFullSpeed(50.0);
 units::percentage mHalfSpeed(30.0);
 
 // State Machine
 #define MODE_IDLE   (0x0000)                  
-#define MODE_DRIVE  (0x0001)                 
-#define MODE_TEST   (0x0002) 
+#define MODE_DRIVE  (0x0001)
+#define MODE_AUTO   (0x0002)      
+#define MODE_OFF    (0x0003)           
+                 
 int system_mode = MODE_IDLE;
+char drivemode;
 
 void setup() {
 
@@ -139,17 +175,12 @@ void setup() {
   delay(100);
 }
 
-// Functions for motor control and manoeuvres
+// Functions for motor control and turning
+// Implementing Proportional Controller for differential drive system
+
 void robotForward()
 {
-  right_motor::forward(mHalfSpeed);
-  left_motor::forward(mHalfSpeed);  
-}
 
-void robotBackward()
-{
-  right_motor::backward(mHalfSpeed);
-  left_motor::backward(mHalfSpeed);  
 }
 
 void robotStop()
@@ -158,83 +189,109 @@ void robotStop()
   left_motor::stop();
 }
 
+void robotTurn()
+{
+
+  if (desiredRotation > 0) //+ve means turn to left (CCW)
+  {
+    left_motor::backward(mHalfSpeed);
+    right_motor::forward(mHalfSpeed);
+  }
+
+  //-ve so turn to right (CW)
+  left_motor::forward(mHalfSpeed);
+  right_motor::backward(mHalfSpeed);
+}
+
 void loop()
 {
+  if (Serial.available() > 0) drivemode = Serial.read();
+  else drivemode = -1;
+    
     switch(system_mode)
     {
 
       case (MODE_IDLE):
+
+        //Green OFF and Red ON
+        statusGreen::write(logic_level::low);
+        statusRed::write(logic_level::high);
       
         //Start LED Sequence
-        if ((millis() - led_timer) > 2000)
+        if ((millis() - led_timer) > 5000)
         {
           led_timer = millis();
           
-          //Green OFF and Red ON
-          statusGreen::write(logic_level::low);
-          statusRed::write(logic_level::high);     
+          //Green ON and Red OFF
+          statusGreen::write(logic_level::high);
+          statusRed::write(logic_level::low);     
           system_mode = MODE_DRIVE; //change to state of driving
-          delay(15);       
+          delay(100);       
         }
         
-        //Green ON and Red OFF
-        statusGreen::write(logic_level::high);
-        statusRed::write(logic_level::low);
-
         break;
 
       case (MODE_DRIVE): 
-        robotForward();
-        if (millis() - motor_timer > 5000)
+
+        if (drivemode == 'a')
         {
-          motor_timer = millis();
-          robotStop();
+          system_mode = MODE_AUTO; //from computer vision section
         }
-       
+        
+        //1. The robot starts at the centre of a cell and moves forward to the centre of the next cell.
+        //The cells are not surrounded by walls.
+        
+        #ifdef MOVE_CENTRES
+          Serial.println("moving to next cell");
+        #endif
+         
+        //2. The robot starts at the centre of a cell and rotates for an angle (90deg or -90deg) specified by the
+        //demonstrator via Bluetooth (the demonstrator inputs 90 means the robot should turn left for 90deg; the
+        //demonstrator inputs –90 means the robot should turn right for 90deg) while remaining at the same cell.
+        //The cell is not surrounded by walls.
+      
+        #ifdef SPOT_TURN
+      
+          //Read in from Bluetooth
+          desiredRotation = 90;
+                     
+        #endif
+      
+        //3. The robot starts at the centre of a cell and moves forward in a straight line for 7 cells
+        //(including the starting cell) without hitting the walls. (
+      
+        #ifdef STRAIGHT
+          
+        #endif
+      
+        //4. The robot starts at the centre of a cell and moves along a square wave path
+        //for 10 cells (including the starting cell) without hitting the walls. (
+      
+        #ifdef SQUARE_WAVE
+      
+        #endif        
         break;
 
-      case (MODE_TEST):
-      
-        Serial.println("TESTING");
-//        Serial.print("rEncoder: "); Serial.print(-eCountR);
-//        Serial.print("lEncoder: "); Serial.print(eCountL);
-//        Serial.print(" | rWheel(mm): "); Serial.println(abs(-(eCountR/COUNTS_PER_REV)*WHEEL_CIRCUM)); 
-//        Serial.print(" | lWheel(mm): "); Serial.println(abs((eCountL/COUNTS_PER_REV)*WHEEL_CIRCUM)); 
+      case (MODE_AUTO):
+        //Serial input from Vision section to start
+        Serial.println("In Auto Mode");
+        
+        if (drivemode == 'e')
+        {
+          system_mode = MODE_OFF;
+        }
+        break;
+
+     case (MODE_OFF):
+
+        // Goal found -> Green OFF and Red ON
+        statusGreen::write(logic_level::low);
+        statusRed::write(logic_level::high);          
         break;
 
       default:
         break;      
-    }
-
-  //2. The robot starts at the centre of a cell and moves forward to the centre of the next cell.
-  //The cells are not surrounded by walls.
-  
-  #ifdef MOVE_CENTRES
+    } 
     
-  #endif
-   
-  //3. The robot starts at the centre of a cell and rotates for an angle (90deg or -90deg) specified by the
-  //demonstrator via Bluetooth (the demonstrator inputs 90 means the robot should turn left for 90deg; the
-  //demonstrator inputs –90 means the robot should turn right for 90deg) while remaining at the same cell.
-  //The cell is not surrounded by walls.
-
-  #ifdef SPOT_TURN
-               
-  #endif
-
-  //4. The robot starts at the centre of a cell and moves forward in a straight line for 7 cells
-  //(including the starting cell) without hitting the walls. (
-
-  #ifdef STRAIGHT
-    
-  #endif
-
-  //5. The robot starts at the centre of a cell and moves along a square wave path
-  //for 10 cells (including the starting cell) without hitting the walls. (
-
-  #ifdef SQUARE_WAVE
-
-  #endif  
-    
-  delay(50);
+  delay(25);
 }    
