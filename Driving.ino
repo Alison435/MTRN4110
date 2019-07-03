@@ -14,38 +14,24 @@ using namespace hardware;
 int desiredRotation; //90 or -90 input at serial (through Bluetooth)
 
 // Motor/Wheel parameters
-#define COUNT_PER_REV       1920  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV       1500.0  // 16 CPR * 120:1 gear ratio
 #define CIRCUM              240.0 // mm
-#define GEAR                120.0 // 120:1
 #define CELL_LENGTH         250.0 // mm
+#define STRAIGHT_DISTANCE   225.0
 
 // Isolated Test Defines (toggle ON.OFF) -> For Phase B
 #define TEST_MOVE_CENTRES
-//#define TEST_SPOT_TURN
-//#define TEST_STRAIGHT
-//#define TEST_SQUARE_WAVE
-
-//typedef enum robot_motion
-//{
-//  ROBOT_FORWARD,
-//  ROBOT_LEFT,
-//  ROBOT_RIGHT,  
-//} ROBOT_MOVE;
+#define TEST_SPOT_TURN
+#define TEST_STRAIGHT
+#define TEST_SQUARE_WAVE
+//#define TEST_AUTO
 //
-//typedef struct robot_movement
-//{
-//  ROBOT_MOVE  driveAction;
-//  double      setPWM;
-//} COMMAND_SEQ
-//
-//
-//COMMAND_SEQ robotMovements[] = 
-//{
-//
-//}
-//
-//// Pointer to sequence for robot moves
-//COMMAND_SEQ *move_ref;
+typedef enum robot_motion
+{
+  ROBOT_FORWARD,
+  ROBOT_LEFT,
+  ROBOT_RIGHT,  
+} ROBOT_MOVE;
 
 bool robot_start = false; //will be set to true once LED sequence is finished
 int movement_num = 0;
@@ -69,7 +55,7 @@ int in3 = 12; //digital
 int in4 = 13; //digital
 
 //function for the motor controller
-void motor(int pin1,int pin2,int percRight,int percLeft)
+void motorControl(int pin1,int pin2,float percRight,float percLeft)
 {  
   if (pin1 == 1) {
     analogWrite(leftEnableDC,(percLeft/100)*255);
@@ -96,6 +82,110 @@ void motor(int pin1,int pin2,int percRight,int percLeft)
   }
 }
 
+void robotForward(float distance, float setSpeedPerc)
+{
+  long targetCount;
+  float numRev;
+
+  long lDiff, rDiff;  // diff between current encoder count and previous count
+
+  float leftPWM = setSpeedPerc;
+  float rightPWM = setSpeedPerc;
+
+  // variables for tracking the left and right encoder counts
+  long prevlCount, prevrCount;
+  
+  // variable used to offset motor power on right vs left to keep straight.
+  double offset = 0.35;  // offset amount to compensate Right vs. Left drive
+
+  numRev = distance / CIRCUM;  // calculate the target # of rotations
+  targetCount = numRev * COUNT_PER_REV;    // calculate the target count
+ 
+  // Reset encoders
+  eCountL = 0;
+  eCountR = 0;
+  delay(50);
+
+  motorControl(1,0,rightPWM,leftPWM);
+
+  while (abs(eCountR) < targetCount)
+  {
+    motorControl(1,0,rightPWM,leftPWM);
+
+    // calculate the rotation "speed" as a difference in the count from previous cycle.
+    lDiff = (abs(eCountL) - prevlCount);
+    rDiff = (abs(eCountR) - prevrCount);
+
+    // store the current count as the "previous" count for the next cycle.
+    prevlCount = -eCountL;
+    prevrCount = -eCountR;
+
+    // if left is faster than the right, slow down the left / speed up right
+    if (lDiff > rDiff) 
+    {
+      leftPWM -= offset;
+      rightPWM += offset;
+    }
+    // if right is faster than the left, speed up the left / slow down right
+    else if (lDiff < rDiff) 
+    {
+      leftPWM += offset;  
+      rightPWM -= offset;    }
+    delay(50);  // short delay to give motors a chance to respond.
+  }
+  
+  robotStop();
+  delay(1000);
+}
+
+// Functions for motor control and turning
+// Implementing Proportional Controller for differential drive system
+
+void robotStop()
+{
+  right_motor::stop();
+  left_motor::stop();
+}
+
+void robotTurn(int directionVal)
+{
+
+  float setSpeedPerc = 30.0;
+
+  resetEncoderR();
+  resetEncoderL();
+
+  if (directionVal == 0)  //Turn to left (CCW)
+  {
+    //Right + and Left -
+
+    while (abs(eCountR) <= COUNT_PER_REV/3.20)
+    {
+      motorControl(0,0,setSpeedPerc,setSpeedPerc);    
+    }
+    
+    resetEncoderR();
+    resetEncoderL();
+    robotStop();
+    delay(500);
+  }
+
+  else //directionVal is 1
+  {
+    //-ve so turn to right (CW)
+    //Right - and Left +
+
+    while (abs(eCountR) <= COUNT_PER_REV/3.50)
+    {
+      motorControl(1,1,setSpeedPerc,setSpeedPerc);  
+    }
+
+  resetEncoderR();
+  resetEncoderL(); 
+  robotStop();    
+  delay(250); 
+  }  
+}
 
 // ISR for encoder interrupt at Right Motor
 void encoderCountR()
@@ -217,46 +307,14 @@ void setup() {
   delay(100);
 }
 
-// Functions for motor control and turning
-// Implementing Proportional Controller for differential drive system
-
-// Forward for distance at desired power
-void robotForward()
-{
-  
-}
-
-void robotStop()
-{
-  right_motor::stop();
-  left_motor::stop();
-}
-
-void robotTurn()
-{
-
-  if (desiredRotation > 0) //+ve means turn to left (CCW)
-  {
-    //Right + and Left -
-    //Encoder count = 90
-  }
-
-  //-ve so turn to right (CW)
-  //Right - and Left +
-  //Encoder count = 90
-
-  
-}
-
 void loop()
 {
-  // Using Bluetooth Module (COMX)
-  if (Serial.available() > 0) drivemode = Serial.read();
-  else drivemode = -1;
-    
+  // Using Bluetooth Module (COM31)
+  if (Serial.available() > 0) 
+    drivemode = Serial.read();
+
     switch(system_mode)
     {
-
       case (MODE_IDLE):
 
         //Green OFF and Red ON
@@ -274,11 +332,13 @@ void loop()
           case ('1'):
             startLEDSequence();     
             system_mode = MODE_CENTRES;
+            //statusGreen::write(logic_level::high);
             break;
 
           case ('2'):
             startLEDSequence();    
             system_mode = MODE_SPOT_TURN;
+            //statusGreen::write(logic_level::low);
             break;
             
           case ('3'):
@@ -287,7 +347,8 @@ void loop()
             break;
             
           case ('4'):
-            startLEDSequence();  
+            startLEDSequence();
+            //Serial.println("SQUARE WAVE");  
             system_mode = MODE_SQUARE_WAVE;
             break;
 
@@ -304,11 +365,14 @@ void loop()
         //The cells are not surrounded by walls.
         
         #ifdef TEST_MOVE_CENTRES
-          Serial.println("moving to next cell");
-          //robotForward();
-        #endif
+          //Serial.println("moving to next cell");
+          //motorControl(1,0,25.0,25.0); //.debug
+          robotForward(225.0,30.0);
+          delay(1000);         
+          system_mode = MODE_OFF;     
         break;
-        
+        #endif
+                
       case (MODE_SPOT_TURN):
         
         //2. The robot starts at the centre of a cell and rotates for an angle (90deg or -90deg) specified by the
@@ -319,18 +383,82 @@ void loop()
         #ifdef TEST_SPOT_TURN
       
           //Read in from Bluetooth
-          desiredRotation = 90;
+          //90 -> CCW (LEFT)
+          //-90 -> CW (RIGHT)
+
+          //Serial.println("Awaiting Input from Bluetooth");          
+          
+          // Parameters for Bluetooth Input
+          char rotArray[5];
+          int counter = 0;
+          int rotFlag = 0;
+          int input_complete = 0;
+                       
+          while(input_complete == 0)
+          {
+            while (Serial.available() > 0)
+            {             
+              byte incomingByte = Serial.read();
+  
+                switch (incomingByte)
+                {        
+                  case '\n':   // end of text
+                    rotArray [counter] = 0;  // terminating null byte
+                    
+                    // terminator reached! process input_line here ...
+                    //Serial.println(rotArray);
+                    input_complete = 1;
+                    break;
+              
+                  case '\r':   // discard carriage return
+                    break;
+    
+                  case '-':
+                    rotFlag = 1;
+                    rotArray [counter] = '-';    
+                    break;              
+              
+                  default:
+                    // keep adding if not full ... allow for terminating null byte
+                    if (counter < (7))
+                      rotArray [counter++] = incomingByte;
+                    break;        
+                  }
+                }
+            }       
+
+            //Serial.println("INPUT RECEIVED");
+            
+          if (rotFlag == 0)
+          {
+            Serial.println("TURN LEFT");
+            robotTurn(0); //TURN LEFT            
+          }
+          else if (rotFlag == 1) //-ve sign detected in input
+          {
+            Serial.println("TURN RIGHT");
+            robotTurn(1); //TURN RIGHT
+          }
+
+          system_mode = MODE_OFF;        
                      
         #endif
       
         break;
          
-     case (MODE_STRAIGHT):
+      case (MODE_STRAIGHT):
 
         //3. The robot starts at the centre of a cell and moves forward in a straight line for 7 cells
         //(including the starting cell) without hitting the walls. (
       
         #ifdef TEST_STRAIGHT
+          int j = 0;
+          for (j = 0; j < 7; j++)
+          {
+            robotForward(STRAIGHT_DISTANCE,30.0);
+          }
+          delay(1000);
+          system_mode = MODE_OFF;        
           
         #endif
         
@@ -339,38 +467,109 @@ void loop()
       case (MODE_SQUARE_WAVE):
       
         //4. The robot starts at the centre of a cell and moves along a square wave path
-        //for 10 cells (including the starting cell) without hitting the walls. (
+        //for 10 cells (including the starting cell) without hitting the walls.
       
         #ifdef TEST_SQUARE_WAVE
+
+        //slslsrsrslslsrsrs
+
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn();
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn();
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn();
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn();
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn();
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn();
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn();
+
+          robotTurn(0); //ccw
+          delay(1000);
+          robotTurn(1); //cw
+          delay(1000);
+          system_mode = MODE_OFF;        
       
         #endif        
         break;
 
       case (MODE_AUTO):
 
-        // debug to see if in AUTO mode (after CV)
-        led::write(logic_level::low);
+        #ifdef TEST_AUTO
+  
+          //Take in array of commands (5 cells towards goal)
+          //Turn into physical motion
+          //eg: receive array of "^^>^^>"
+  
+          #define MAX_INPUT 6
+          char robotMovements[MAX_INPUT];
+          byte moveByte; 
+          int move_i = 0;
+  
+          // While communication through bluetooth is open
+          // Read in bytes
+          while (Serial.available () > 0)
+          {
+            switch (moveByte)
+            {  
+              case('\n'):
+                robotMovements[move_i] = 0; //null terminator
+                break;
+                
+              default:
+                robotMovements[move_i++] = moveByte; //fill in commandArry
+                break;
+            }
+
+            // if all commands have been processed
+            if (move_i == MAX_INPUT - 1)
+            {
+              break;                     
+            }
+          }
+  
+          // Iterate through command Array
+          for (int i = 0; i < sizeof(robotMovements); i++)
+          {
+            switch (i)
+            {  
+              case('^'):
+                robotForward();
+                break;
+    
+              case('>'):
+                robotTurn(1);
+                break;
+    
+              case('<'):
+                robotTurn(0);
+                break;
+                
+              default:
+                break;
+            }             
+          }
+          
+        system_mode = MODE_OFF; //once 5 cells are moved  
         
-        if (millis() - led_timer > 2000)
-        {
-          led_timer = millis();
-          led::write(logic_level::high);
-        }
-        
-        if (drivemode == 'e')
-        {
-          system_mode = MODE_OFF;
-        }
-        
+        #endif       
+               
         break;
 
-     case (MODE_OFF):
+      case (MODE_OFF):
 
-        // Goal found -> Green OFF and Red ON
+        // Goal found / End Test -> Green OFF and Red ON
+        Serial.println("ROBOT OFF");
+        delay(50);
         statusGreen::write(logic_level::low);
         statusRed::write(logic_level::high);     
         right_motor::stop();
-        left_motor::stop();     
+        left_motor::stop();
+        delay(50);     
         break;
 
       default:
