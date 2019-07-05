@@ -182,7 +182,7 @@ void robotTurn(int directionVal)
   resetEncoderR();
   resetEncoderL(); 
   robotStop();    
-  delay(250); 
+  delay(1000); 
   }  
 }
 
@@ -461,26 +461,23 @@ void mode_square_wave()
 
   //slslsrsrslslsrsrs
 
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-
-  Serial.println("SQUARE");
-  robotTurn(0); //ccw
-  delay(1000);
-  robotTurn(1); //cw
-  delay(1000);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(0);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(0);
+  robotForward(STRAIGHT_DISTANCE,30.0);s
+  robotTurn(1);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(1);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(0);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(0);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(1);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(1);
+  robotForward(STRAIGHT_DISTANCE,30.0);
             
   statusGreen::write(logic_level::low);
   statusRed::write(logic_level::high); 
