@@ -180,7 +180,7 @@ void robotTurn(int directionVal)
   resetEncoderR();
   resetEncoderL(); 
   robotStop();    
-  delay(250); 
+  delay(1000); 
   }  
 }
 
@@ -285,7 +285,7 @@ char drivemode;
 
 void setup() {
 
-  Serial.begin(115200);
+  Serial.begin(9600);  
   setupDigitalPins();
   setupMotor(); 
   setupEncoderWheel(); 
@@ -300,9 +300,9 @@ void loop()
   statusRed::write(logic_level::high);  
   
   // Using Bluetooth Module (COM31)
-  if (Serial.available() > 0) 
+  if (Serial.available() > 0)   
   {
-    drivemode = Serial.read();
+    drivemode = Serial.read();  
 
     switch (drivemode)
     {
@@ -344,7 +344,7 @@ void mode_centres()
   //The cells are not surrounded by walls.
         
   #ifdef TEST_MOVE_CENTRES
-    Serial.println("moving to next cell");
+    //Serial.println("moving to next cell");
     //motorControl(1,0,25.0,25.0); //.debug
     robotForward(225.0,30.0);
     statusGreen::write(logic_level::low);
@@ -374,7 +374,8 @@ void mode_spot_turn()
           int rotFlag = 0;
           int input_complete = 0;
           int newCounter = 0;
-          
+
+     //Set Serial monitor to new line
      Serial.println("Awaiting Input from Bluetooth");          
       
      while(input_complete == 0)
@@ -416,12 +417,12 @@ void mode_spot_turn()
               
    if (rotFlag == 0)
    {
-    Serial.println("TURN LEFT");
+    led::write(logic_level::high);
     robotTurn(0); //TURN LEFT            
    }
    else if (rotFlag == 1) //-ve sign detected in input
    {
-    Serial.println("TURN RIGHT");
+    led::write(logic_level::high);
     robotTurn(1); //TURN RIGHT
    }
  
@@ -459,26 +460,29 @@ void mode_square_wave()
 
   //slslsrsrslslsrsrs
 
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn();
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(0);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(0);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(1);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(1);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(0);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(0);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(1);
+  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotTurn(1);
+  robotForward(STRAIGHT_DISTANCE,30.0);
 
-  Serial.println("SQUARE");
-  robotTurn(0); //ccw
-  delay(1000);
-  robotTurn(1); //cw
-  delay(1000);
+//  Serial.println("SQUARE");
+//  robotTurn(0); //ccw
+//  delay(1000);
+//  robotTurn(1); //cw
+  delay(500);
             
   statusGreen::write(logic_level::low);
   statusRed::write(logic_level::high); 
@@ -506,7 +510,7 @@ void mode_auto()
   Serial.println("Awaiting commands");
   while (commandFinished == 0)
   {
-    while (Serial.available () > 0)
+    while (Serial.available () > 0) //change to Serial1
     {
       moveChar = Serial.read();
       switch (moveChar)
@@ -519,7 +523,7 @@ void mode_auto()
           }
           robotMovements[move_i] = 0; //null terminator
           commandFinished = 1;
-          Serial.println(robotMovements);
+          //Serial.println(robotMovements);
           break;
 
         case '\r':   // discard carriage return
@@ -536,31 +540,41 @@ void mode_auto()
   Serial.println("--COMMANDS READY--");
           
   // Iterate through command Array
-  for (int i = 0; i < sizeof(robotMovements); i++)
+  for (int i = 0; i < MAX_INPUT; i++)
   {
-    switch (robotMovements[i])
+    char j = robotMovements[i];
+      
+    switch (j)
     {  
-              case('^'):
-                robotForward(STRAIGHT_DISTANCE,30.0);
-                Serial.println("FORWARDS");
-                break;
+      case('^'):
+        Serial.println("FORWARDS");
+        robotForward(STRAIGHT_DISTANCE,30.0);
+        delay(15);        
+        break;
     
-              case('>'):
-                robotTurn(1);
-                Serial.println("RIGHT");
-                break;
+      case('>'):
+        Serial.println("RIGHT");
+        robotTurn(1);
+        delay(15);        
+        break;
     
-              case('<'):
-                robotTurn(0);
-                Serial.println("LEFT");
-                break;
+      case('<'):        
+        Serial.println("LEFT");
+        robotTurn(0);
+        delay(15);        
+        break;
                 
-              default:
-                break;
+     default:
+       break;
     }
-    delay(500);             
-  }          
-        
+    delay(100);             
+  }
+
+  // ROBOT is at goal cell:
+  // Green LED OFF and red LED ON
+  statusGreen::write(logic_level::low);
+  statusRed::write(logic_level::high); 
+
 #endif 
 }  
 
