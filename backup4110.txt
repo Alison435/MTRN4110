@@ -23,47 +23,65 @@
 //int verticalWalls[ROWS_wall][COLS_wall+1];
 
 
-// vertical walls array
-  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1}, 
-                                                  {1,1,1,0,0,1,0,1,1,1}, 
-                                                  {1,0,0,1,0,0,1,1,1,1}, 
-                                                  {1,0,0,0,1,0,0,0,0,1}, 
-                                                  {1,0,1,0,0,0,1,0,1,1}, 
-                                                                };
-                                     //verticalWalls[5][10]
-                                                                                  
-  // horizontal walls array                                                 
-  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
-                                                     {0,0,1,1,0,1,1,0,0}, 
-                                                     {0,1,0,1,1,1,0,0,1},
-                                                     {1,0,1,1,0,1,0,0,0},
-                                                     {0,1,0,1,0,1,0,1,0},
-                                                     {1,1,1,1,1,1,1,1,1}
-                                                    
-                                                     };            //horizontalWalls[6][9]
+//// vertical walls array
+//  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1}, 
+//                                                  {1,1,1,0,0,1,0,1,1,1}, 
+//                                                  {1,0,0,1,0,0,1,1,1,1}, 
+//                                                  {1,0,0,0,1,0,0,0,0,1}, 
+//                                                  {1,0,1,0,0,0,1,0,1,1}, 
+//                                                                };
+//                                     //verticalWalls[5][10]
+//                                                                                  
+//  // horizontal walls array                                                 
+//  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
+//                                                     {0,0,1,1,0,1,1,0,0}, 
+//                                                     {0,1,0,1,1,1,0,0,1},
+//                                                     {1,0,1,1,0,1,0,0,0},
+//                                                     {0,1,0,1,0,1,0,1,0},
+//                                                     {1,1,1,1,1,1,1,1,1}
+//                                                    
+//                                                     };            //horizontalWalls[6][9]
                                                      
-/*
+
+//// vertical walls array
+//  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,0,0,0,0,0,1}, 
+//                                                  {1,0,0,0,0,0,0,0,0,1}, 
+//                                                  {1,0,0,0,0,0,0,0,0,1}, 
+//                                                  {1,0,0,0,0,0,0,0,0,1}, 
+//                                                  {1,0,0,0,0,0,0,0,0,1}, 
+//                                                                };
+//                                     //verticalWalls[5][10]
+//                                     
+//                                                                                  
+//  // horizontal walls array                                                 
+//  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
+//                                                     {0,0,0,0,0,0,0,0,0}, 
+//                                                     {0,0,0,0,0,0,0,0,0},
+//                                                     {0,0,0,0,0,0,0,0,0},
+//                                                     {0,0,0,0,0,0,0,0,0},
+//                                                     {1,1,1,1,1,1,1,1,1}
+//                                                    
+//                                                     };            //horizontalWalls[6][9]
+
 // vertical walls array
-  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,2,0,1,0,0,0,0,1}, 
-                                                  {1,0,2,0,1,0,0,0,0,1}, 
-                                                  {1,0,2,0,1,0,0,0,0,1}, 
-                                                  {1,0,2,0,1,0,0,0,0,1}, 
-                                                  {1,0,2,0,1,0,0,0,0,1}, 
+  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,0,0,0,0,0,1}, 
+                                                  {1,0,0,0,0,0,0,0,0,1}, 
+                                                  {1,0,0,0,1,1,0,0,0,1}, 
+                                                  {1,0,0,1,1,1,0,0,0,1}, 
+                                                  {1,1,1,0,0,1,0,0,0,1}, 
                                                                 };
                                      //verticalWalls[5][10]
                                      
                                                                                   
   // horizontal walls array                                                 
   int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
-                                                     {1,1,1,1,1,1,1,1,1}, 
-                                                     {0,0,0,0,0,0,0,0,0},
-                                                     {2,2,2,2,2,2,2,2,2},
-                                                     {1,1,1,1,1,1,1,1,1},
+                                                     {0,0,0,0,0,0,0,0,0}, 
+                                                     {0,0,0,0,1,0,0,0,0},
+                                                     {1,1,1,0,0,0,0,0,0},
+                                                     {0,1,0,1,0,0,0,0,0},
                                                      {1,1,1,1,1,1,1,1,1}
                                                     
                                                      };            //horizontalWalls[6][9]
-*/
-
                        
 
 //Mouse Stuff  
@@ -240,17 +258,17 @@ void Get_Maze_Layout(){
 //Printing the Maze
 void Print_Maze(){
     //start by checking the goal
-//    int CurrRowCheck = goalRow;
-//    int CurrColCheck = goalCol;
-//    int prevRow = goalRow;
-//    int prevCol = goalCol;
+    int CurrRowCheck = goalRow;
+    int CurrColCheck = goalCol;
+    int prevRow = goalRow;
+    int prevCol = goalCol;
 
-int CurrRowCheck = 3;
-int CurrColCheck = 2;
-//
-////keep track of the column and row of every two cells 
-int prevRow = 3;
-int prevCol = 2;
+//int CurrRowCheck = 4;
+//int CurrColCheck = 2;
+////
+//////keep track of the column and row of every two cells 
+//int prevRow = 4;
+//int prevCol = 2;
            
            for(int i = 0;i < 2*ROWS_wall+1;i++)
            {
@@ -312,23 +330,22 @@ int prevCol = 2;
                     else
                     {
 
-                      /////////////////
+/////////////////////////////////////////////////////
                         //represents the current cell the for loops are checking
                         int value = values[(i-1)/2][(j-1)/2]; 
-
-                         
-                        
                          
                         if(value <= Max_Value_Goal){
                             if(((i-1)/2) == CurrRowCheck && ((j-1)/2) == CurrColCheck){
 
-                              //CurrRowCheck = CurrRowCheck + 1;
+/////////////////////////////////////////////////////
                                 
-//                                //check NORTH
-//                                //only check if the walls or not there
-//                                if(horizontalWalls[CurrRowCheck][CurrColCheck] == 0){
-//                                    //check if the north
-//                                    if(values[CurrRowCheck-1][CurrColCheck] == value - 1 ){
+                                //check NORTH
+                                //only check if the walls or not there
+                                if(horizontalWalls[CurrRowCheck][CurrColCheck] == 0){
+                                  Serial.print("n");
+                                    //check if the north
+                                    if(values[CurrRowCheck-1][CurrColCheck] == value - 1 ){
+                                      Serial.print("N");
 //                                        //if there is a value ones less in the WEST OR EAST
 //                                        if((values[CurrRowCheck][CurrColCheck - 1] == value - 1 ) || (values[CurrRowCheck][CurrColCheck + 1] == value - 1) ){
 //                                            if(CurrColCheck = prevCol){
@@ -337,80 +354,76 @@ int prevCol = 2;
 //                                                CurrColCheck = CurrColCheck;
 //                                            } 
 //                                        } else {
-//                                            CurrRowCheck = CurrRowCheck - 1;
-//                                            CurrColCheck = CurrColCheck;                                          
+                                            CurrRowCheck = CurrRowCheck - 1;
+                                            CurrColCheck = CurrColCheck;                                          
 //                                        }
-//                                    }
-//                                }
-
-
-
-                                //check EAST
-                                if(verticalWalls[CurrRowCheck][CurrColCheck + 1] == 0){
-                                    if(values[CurrRowCheck][CurrColCheck + 1] == value - 1 ){
-                                        if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){
-                                            if(CurrRowCheck = prevRow){                             
-                                                //change Current Row and Column being checked
-                                                CurrRowCheck = CurrRowCheck;
-                                                CurrColCheck = CurrColCheck + 1;
-                                            }
-                                        } else {
-                                            CurrRowCheck = CurrRowCheck;
-                                            CurrColCheck = CurrColCheck + 1;                                          
-                                        }
                                     }
                                 }
 
 
-
-//                                  Serial.print("AT: "); Serial.print(CurrRowCheck);Serial.print(CurrColCheck); Serial.print(" ");
-//                                  Serial.print("<S=");
-//                                  Serial.print(CurrRowCheck+1);
-//                                  Serial.print(CurrColCheck);
-//                                  Serial.print(">");
-//                                  Serial.print("->next FF#");
-//                                  Serial.print(value-1); Serial.print("-");
-
-//  WORKS
+/////////////////////////////////////////////////////
                                 //check SOUTH
                                 if(horizontalWalls[CurrRowCheck + 1][CurrColCheck] == 0){
+                                  Serial.print("s");
                                     if(values[CurrRowCheck + 1][CurrColCheck] == value - 1 ){
+                                      Serial.print("S");
                                       
-                                        if((values[CurrRowCheck][CurrColCheck - 1] == value - 1 ) || (values[CurrRowCheck][CurrColCheck + 1] == value - 1) ){
-                                            if(CurrColCheck = prevCol){
-                                                //change Current Row and Column being checked
-                                                CurrRowCheck = CurrRowCheck + 1;
-                                                CurrColCheck = CurrColCheck;                                              
-                                            }
-                                        } else {
+//                                        if((values[CurrRowCheck][CurrColCheck - 1] == value - 1 ) || (values[CurrRowCheck][CurrColCheck + 1] == value - 1) ){
+//                                            if(CurrColCheck = prevCol){
+//                                                //change Current Row and Column being checked
+//                                                CurrRowCheck = CurrRowCheck + 1;
+//                                                CurrColCheck = CurrColCheck;                                              
+//                                            }
+//                                        } else {
                                             //change Current Row and Column being checked
                                             CurrRowCheck = CurrRowCheck + 1;
                                             CurrColCheck = CurrColCheck;
-                                        }
-                                      
-
+//                                        }
                                     }
                                 }
 
 
-//Doesnt work
-//                                //check WEST
-//                                if(verticalWalls[CurrRowCheck][CurrColCheck] == 0){ 
-//                                    if(values[CurrRowCheck][CurrColCheck - 1] == value - 1 ){
+/////////////////////////////////////////////////////
+                                //check EAST
+                                if(verticalWalls[CurrRowCheck][CurrColCheck + 1] == 0){
+                                  Serial.print("e");
+                                    if(values[CurrRowCheck][CurrColCheck + 1] == value - 1 ){
+                                      Serial.print("E");
+//                                        if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){
+//                                            if(CurrRowCheck = prevRow){                             
+//                                                //change Current Row and Column being checked
+//                                                CurrRowCheck = CurrRowCheck;
+//                                                CurrColCheck = CurrColCheck + 1;
+//                                            }
+//                                        } else {
+                                            CurrRowCheck = CurrRowCheck;
+                                            CurrColCheck = CurrColCheck + 1;                                          
+//                                        }
+                                    }
+                                }
+
+/////////////////////////////////////////////////////
+                                //check WEST
+                                if(verticalWalls[CurrRowCheck][CurrColCheck] == 0){ 
+                                  Serial.print("w");
+                                    if(values[CurrRowCheck][CurrColCheck - 1] == value - 1 ){
+                                      Serial.print("W");
+                                      
 //                                        if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){ 
+//                                                                            Serial.print("i");
 //                                            if(CurrRowCheck = prevRow){                             
 //                                                //change Current Row and Column being checked
 //                                                CurrRowCheck = CurrRowCheck;
 //                                                CurrColCheck = CurrColCheck - 1;
 //                                            } 
 //                                        }else {
-//                                                CurrRowCheck = CurrRowCheck;
-//                                                CurrColCheck = CurrColCheck - 1;                                                             
+                                                CurrRowCheck = CurrRowCheck;
+                                                CurrColCheck = CurrColCheck - 1;                                                             
 //                                        }
-//                                    }
-//                                }
+                                    }
+                                }
 
-                                //////////////////////////////
+/////////////////////////////////////////////////////
                                 
                                 //print value
                                 if(values[((i-1)/2)][((j-1)/2)] < 10){
@@ -420,20 +433,21 @@ int prevCol = 2;
                                     Serial.print(value);
                                     Serial.print(" ");                                  
                                 }     
-
+/////////////////////////////////////////////////////
 
                                 
                                                                                           
                             } else {
 
-                             //Serial.print("i");
-                                if(values[((i-1)/2)][((j-1)/2)] < 10){
-                                    Serial.print(" ");
-                                    Serial.print("  ");                                  
-                                } else {
-                                    Serial.print("  ");
-                                    Serial.print(" ");                                  
-                                }      
+                                  Serial.print("i"); Serial.print("  ");
+                                  
+//                                if(values[((i-1)/2)][((j-1)/2)] < 10){
+//                                    Serial.print(" ");
+//                                    Serial.print("  ");                                  
+//                                } else {
+//                                    Serial.print("  ");
+//                                    Serial.print(" ");                                  
+//                                }      
                             }
                             
                             prevRow  = CurrRowCheck;
