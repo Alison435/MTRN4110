@@ -245,19 +245,15 @@ void Print_Maze(){
 //    int prevRow = goalRow;
 //    int prevCol = goalCol;
 
-int CurrRowCheck = 2;
-int CurrColCheck = 4;
+int CurrRowCheck = 3;
+int CurrColCheck = 2;
 //
 ////keep track of the column and row of every two cells 
-int prevRow = 2;
-int prevCol = 4;
+int prevRow = 3;
+int prevCol = 2;
            
            for(int i = 0;i < 2*ROWS_wall+1;i++)
            {
-                Serial.print(CurrRowCheck); Serial.print(" ");
-                Serial.print(CurrColCheck); Serial.print(" ");
-                Serial.print(prevRow); Serial.print(" ");
-                Serial.print(prevCol); Serial.print(" ");
 
             
             for(int j = 0;j < 2*COLS_wall+1;j++)
@@ -339,97 +335,82 @@ int prevCol = 4;
 //                                                //change Current Row and Column being checked
 //                                                CurrRowCheck = CurrRowCheck - 1;
 //                                                CurrColCheck = CurrColCheck;
-//                                            } else {
-//                                                if(values[((i-1)/2)][((j-1)/2)] < 10){
-//                                                    Serial.print(" ");
-//                                                    Serial.print("  ");                                  
-//                                                } else {
-//                                                    Serial.print("  ");
-//                                                    Serial.print(" ");                                  
-//                                                }                                                
-//                                            }
-//
-//                                        
+//                                            } 
+//                                        } else {
+//                                            CurrRowCheck = CurrRowCheck - 1;
+//                                            CurrColCheck = CurrColCheck;                                          
 //                                        }
-//                                      
 //                                    }
 //                                }
-//
-//                                //check EAST
-//                                if(verticalWalls[CurrRowCheck][CurrColCheck + 1] == 0){
-//                                    if(values[CurrRowCheck][CurrColCheck + 1] == value - 1 ){
-//                                        if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){
-//                                            if(CurrRowCheck = prevRow){                             
-//                                                //change Current Row and Column being checked
-//                                                CurrRowCheck = CurrRowCheck;
-//                                                CurrColCheck = CurrColCheck + 1;
-//                                            } else {
-//                                                if(values[((i-1)/2)][((j-1)/2)] < 10){
-//                                                    Serial.print(" ");
-//                                                    Serial.print("  ");                                  
-//                                                } else {
-//                                                    Serial.print("  ");
-//                                                    Serial.print(" ");                                  
-//                                                }                                                
-//                                            }
-//                                        }
-//                                    }
-//
+
+
+
+                                //check EAST
+                                if(verticalWalls[CurrRowCheck][CurrColCheck + 1] == 0){
+                                    if(values[CurrRowCheck][CurrColCheck + 1] == value - 1 ){
+                                        if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){
+                                            if(CurrRowCheck = prevRow){                             
+                                                //change Current Row and Column being checked
+                                                CurrRowCheck = CurrRowCheck;
+                                                CurrColCheck = CurrColCheck + 1;
+                                            }
+                                        } else {
+                                            CurrRowCheck = CurrRowCheck;
+                                            CurrColCheck = CurrColCheck + 1;                                          
+                                        }
+                                    }
+                                }
+
+
+
+//                                  Serial.print("AT: "); Serial.print(CurrRowCheck);Serial.print(CurrColCheck); Serial.print(" ");
+//                                  Serial.print("<S=");
+//                                  Serial.print(CurrRowCheck+1);
+//                                  Serial.print(CurrColCheck);
+//                                  Serial.print(">");
+//                                  Serial.print("->next FF#");
+//                                  Serial.print(value-1); Serial.print("-");
+
+//  WORKS
                                 //check SOUTH
                                 if(horizontalWalls[CurrRowCheck + 1][CurrColCheck] == 0){
                                     if(values[CurrRowCheck + 1][CurrColCheck] == value - 1 ){
                                       
-//                                        if((values[CurrRowCheck][CurrColCheck - 1] == value - 1 ) || (values[CurrRowCheck][CurrColCheck + 1] == value - 1) ){
-//                                            if(CurrColCheck = prevCol){
-//                                                //change Current Row and Column being checked
-//                                                CurrRowCheck = CurrRowCheck + 1;
-//                                                CurrColCheck = CurrColCheck;                                              
-//                                            }else {
-//                                                if(values[((i-1)/2)][((j-1)/2)] < 10){
-//                                                    Serial.print(" ");
-//                                                    Serial.print("  ");                                  
-//                                                } else {
-//                                                    Serial.print("  ");
-//                                                    Serial.print(" ");                                  
-//                                                }                                               
-//                                            }
-//                                        }
-
+                                        if((values[CurrRowCheck][CurrColCheck - 1] == value - 1 ) || (values[CurrRowCheck][CurrColCheck + 1] == value - 1) ){
+                                            if(CurrColCheck = prevCol){
+                                                //change Current Row and Column being checked
                                                 CurrRowCheck = CurrRowCheck + 1;
-                                                CurrColCheck = CurrColCheck;
+                                                CurrColCheck = CurrColCheck;                                              
+                                            }
+                                        } else {
+                                            //change Current Row and Column being checked
+                                            CurrRowCheck = CurrRowCheck + 1;
+                                            CurrColCheck = CurrColCheck;
+                                        }
+                                      
+
                                     }
-                                }                           
+                                }
 
 
-                                //check WEST
-                                if(verticalWalls[CurrRowCheck][CurrColCheck] == 0){
-                                    if(values[CurrRowCheck][CurrColCheck - 1] == value - 1 ){
-
-                                    
-//                                        if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){
+//Doesnt work
+//                                //check WEST
+//                                if(verticalWalls[CurrRowCheck][CurrColCheck] == 0){ 
+//                                    if(values[CurrRowCheck][CurrColCheck - 1] == value - 1 ){
+//                                        if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){ 
 //                                            if(CurrRowCheck = prevRow){                             
 //                                                //change Current Row and Column being checked
 //                                                CurrRowCheck = CurrRowCheck;
 //                                                CurrColCheck = CurrColCheck - 1;
-//                                            } else {
-//                                                if(values[((i-1)/2)][((j-1)/2)] < 10){
-//                                                    Serial.print(" ");
-//                                                    Serial.print("  ");                                  
-//                                                } else {
-//                                                    Serial.print("  ");
-//                                                    Serial.print(" ");                                  
-//                                                }                                                
-//                                            }
+//                                            } 
+//                                        }else {
+//                                                CurrRowCheck = CurrRowCheck;
+//                                                CurrColCheck = CurrColCheck - 1;                                                             
 //                                        }
+//                                    }
+//                                }
 
-                                                CurrRowCheck = CurrRowCheck;
-                                                CurrColCheck = CurrColCheck - 1;
-                                        
-                                    }                   
-                                }
-
-                              
-                             //   }
+                                //////////////////////////////
                                 
                                 //print value
                                 if(values[((i-1)/2)][((j-1)/2)] < 10){
