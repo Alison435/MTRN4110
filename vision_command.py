@@ -18,8 +18,8 @@ def main():
 
     time.sleep(2)
 
-    # Send command string to Micromouse
-    ser.write("^^>^^>\n")
+    # Send command string to Micromouse (to match video on 8/7/19)
+    ser.write("^>^<^^>^\n")
 
 #----------Execute MAIN Here-----------
 
