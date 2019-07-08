@@ -26,17 +26,17 @@
 // vertical walls array
   int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1}, 
                                                   {1,1,1,0,0,1,0,1,1,1}, 
-                                                  {1,0,0,1,0,0,1,1,1,1}, 
-                                                  {1,0,0,0,1,0,0,0,0,1}, 
+                                                  {1,0,0,1,2,2,1,1,1,1}, 
+                                                  {1,0,0,0,1,2,2,2,2,1}, 
                                                   {1,0,1,0,0,0,1,0,1,1}, 
                                                                 };
                                      //verticalWalls[5][10]
                                                                                   
   // horizontal walls array                                                 
   int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
-                                                     {0,0,1,1,0,1,1,0,0}, 
-                                                     {0,1,0,1,1,1,0,0,1},
-                                                     {1,0,1,1,0,1,0,0,0},
+                                                     {0,0,1,1,0,1,1,2,2}, 
+                                                     {0,1,0,1,1,1,2,2,1},
+                                                     {1,0,1,1,0,1,2,2,2},
                                                      {0,1,0,1,0,1,0,1,0},
                                                      {1,1,1,1,1,1,1,1,1}
                                                     
@@ -101,7 +101,8 @@ int goalCol = 4;
 //Maximum value is the goal value
 int Max_Value_Goal;
 
-
+char commandArray[(ROWS_wall*ROWS_wall)];
+int command_i = 0;
 
 int x = 0;
 
@@ -271,68 +272,23 @@ int prevCol = 4;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //FINDING PATH
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
 {
-
            for(int i = 0;i < 2*ROWS_wall+1;i++)
-           {
-           
+           {          
             for(int j = 0;j < 2*COLS_wall+1;j++)
             {
-                //Add Horizontal Walls
-                if(i%2 == 0 && j%2 == 1)
-                {
-//                    if(horizontalWalls[i/2][j/2] == true)
-//                    {
-//                        Serial.print(" -----");
-//                    } else if(horizontalWalls[i/2][j/2] == 2){
-//                         Serial.print(" *****");
-//                    }
-//                    else
-//                    {
-//                        Serial.print("      ");
-//                    }
-                }
-
-                //Add Vertical Walls
-//                if(i%2 == 1 && j%2 == 0)
-//                {
-//                    if(verticalWalls[i/2][j/2] == true)
-//                    {      
-//                            Serial.print("|  ");
-//                        }else if(verticalWalls[i/2][j/2] == 2){
-//                                Serial.print("*  ");
-//                        }
-//                        else
-//                        {
-//                            Serial.print("   ");                    
-//                    }
-//                }
 
              //Add Flood Fill Values
                 if(i%2 == 1 && j%2== 1){
                     if((i-1)/2 == mouseSRow && (j-1)/2 == mouseSColumn)
                     {
-//                        if(mouseHeading == NORTH)
-//                        {
-//                            Serial.print(" N ");
-//                        }
-//                        else if(mouseHeading == EAST)
-//                        {
-//                            Serial.print(" E ");
-//                        }
-//                        else if(mouseHeading == SOUTH)
-//                        {
-//                            Serial.print(" S ");
-//                        }
-//                        else if(mouseHeading == WEST)
-//                        {
-//                            Serial.print(" W ");
-//                        }
-                    }
-                    else
-                    {
 
+                    } else
+                    {
                         //represents the current cell the for loops are checking
                         value = values[(i-1)/2][(j-1)/2]; 
 
@@ -345,66 +301,44 @@ while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
                             {
                                 // if a valid curr row and curr col. (tracker for the Cells)
                                 values[CurrRowCheck][CurrColCheck] = 'p';  
+
                                 
                                 // ----------------CHECK WEST------------
-
                                 if(verticalWalls[CurrRowCheck][CurrColCheck] == 0){ 
                                                     //Serial.print("!"); //check if direction was valid
                                     if(values[CurrRowCheck][CurrColCheck - 1] == (value - 1))
                                     {
-                                      //cells north and south have valid path
-                                        //if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){ 
-//                                            if(CurrRowCheck = prevRow){ 
-//                                             Serial.print("!"); //same row (when checking west)                           
-//                                                //change Current Row and Column being checked
-//                                                CurrRowCheck = CurrRowCheck;
-//                                                CurrColCheck = CurrColCheck - 1;
-//                                                //Serial.print("{");
-//                                                //Serial.print(CurrRowCheck);
-//                                                //Serial.print(CurrColCheck);
-//                                                //Serial.print("}");
-//                                            } 
-//                                        }else {
-                                                path[CurrRowCheck][CurrColCheck] = value;
-                                                CurrRowCheck = CurrRowCheck;
-                                                CurrColCheck = CurrColCheck - 1; //move to west cell                                                             
-                                                //Serial.print(CurrRowCheck); Serial.print(CurrColCheck);
+
+                                        path[CurrRowCheck][CurrColCheck] = value;
+                                        CurrRowCheck = CurrRowCheck;
+                                        CurrColCheck = CurrColCheck - 1; //move to west cell                                                             
+                                        //Serial.print(CurrRowCheck); Serial.print(CurrColCheck);
     
-                                              //Serial.print(CurrRowCheck); Serial.print(CurrColCheck);
-                                            if (cellMoved == false) {
-                                              cellMoved = true; //Serial.print("_W");
-                                            }
+                                          //Serial.print(CurrRowCheck); Serial.print(CurrColCheck);
+                                        if (cellMoved == false) {
+                                          cellMoved = true; //Serial.print("_W");
+                                          commandArray[command_i++] = 'W';
+                                        }
                                                      
                                     }
                                 }
 
                               // ----------------CHECK NORTH------------
-                                
                                 //check NORTH
                                 //only check if the walls or not there
                                 if(horizontalWalls[CurrRowCheck][CurrColCheck] == 0){
                                  // Serial.print("#"); //check if direction was valid
                                     //check if the north
                                     if(values[CurrRowCheck-1][CurrColCheck] == value - 1 ){                                        
-//                                        if((values[CurrRowCheck][CurrColCheck - 1] == value - 1 ) || (values[CurrRowCheck][CurrColCheck + 1] == value - 1) ){
-//                                            if(CurrColCheck = prevCol){
-//                                                //change Current Row and Column being checked
-//                                                CurrRowCheck = CurrRowCheck - 1;
-//                                                CurrColCheck = CurrColCheck;
-//                                            } 
-//                                        } else {
-//                                            CurrRowCheck = CurrRowCheck - 1;
-//                                            CurrColCheck = CurrColCheck;                                          
-//                                        }
                                             path[CurrRowCheck][CurrColCheck] = value;
                                             CurrRowCheck = CurrRowCheck - 1;
                                             CurrColCheck = CurrColCheck;
                                             if (cellMoved == false)
                                             {
                                               cellMoved = true;// Serial.print("_N");
+                                              commandArray[command_i++] = 'N' ;
                                             }  
-                                      }
-                                    
+                                      }                              
                                   }
 
                                // ----------------CHECK  EAST------------
@@ -412,21 +346,12 @@ while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
                                        //Serial.print("E"); //check if direction was valid
 
                                     if(values[CurrRowCheck][CurrColCheck + 1] == (value - 1) ){ //right of current robot position
-//                                        if((values[CurrRowCheck + 1][CurrColCheck] == value - 1 ) || (values[CurrRowCheck - 1][CurrColCheck] == value - 1) ){                                               
-//                                            if(CurrRowCheck = prevRow){                             
-//                                                //change Current Row and Column being checked
-//                                                CurrRowCheck = CurrRowCheck;
-//                                                CurrColCheck = CurrColCheck + 1;
-//                                            }
-//                                        } else {
-//                                            CurrRowCheck = CurrRowCheck;
-//                                            CurrColCheck = CurrColCheck + 1;  //move to east cell                                        
-//                                        }
                                             path[CurrRowCheck][CurrColCheck] = value;
                                             CurrRowCheck = CurrRowCheck;
                                             CurrColCheck = CurrColCheck + 1;  //move to east cell    
                                             if (cellMoved == false){
                                               cellMoved = true;// Serial.print("_E");
+                                              commandArray[command_i++] = 'E';
                                             }
                                     }
                                 }
@@ -436,86 +361,31 @@ while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
                                 if(horizontalWalls[CurrRowCheck + 1][CurrColCheck] == 0){
                                              //Serial.print("S"); //check if direction was valid
                                     if(values[CurrRowCheck + 1][CurrColCheck] == value - 1 ){                                      
-//                                        if((values[CurrRowCheck][CurrColCheck - 1] == value - 1 ) || (values[CurrRowCheck][CurrColCheck + 1] == value - 1) ){
-//                                            if(CurrColCheck = prevCol){
-//                                                //change Current Row and Column being checked
-//                                                CurrRowCheck = CurrRowCheck + 1;
-//                                                CurrColCheck = CurrColCheck;                                              
-//                                            }
-//                                        } else {
-//                                            //change Current Row and Column being checked
-//                                            CurrRowCheck = CurrRowCheck + 1;
-//                                            CurrColCheck = CurrColCheck;
-//                                        }
                                           path[CurrRowCheck][CurrColCheck] = value;
                                           CurrRowCheck = CurrRowCheck + 1;
                                           CurrColCheck = CurrColCheck;
                                             if (cellMoved == false)
                                             {
                                               cellMoved = true;// Serial.print("_S");
+                                              commandArray[command_i++] = 'S';
                                             }
-
                                     }
-                                }
-               
-
-                                //////////////////////////////
-                                
-                                if (values[(i-1)/2][(j-1)/2] == 'p')
-                                {
-                                  //print value
-//                                  if(values[CurrRowCheck][CurrColCheck] < 10){
-//                                  //if(values[((i-1)/2)][((j-1)/2)] < 10){
-//                                      Serial.print(value);
-//                                      Serial.print("  "); 
-//                                  } else {
-//                                      Serial.print(value);
-//                                      Serial.print(" ");                                  
-//                                  }                                             
-                                }
-                                                                                            
-                            } else {
-
-                             //If not currCol and currRow BUT value <= Goal_Val
-                             if (cellMoved == false) {
-                                  //Serial.print("   ");                                  
-                             }
-                            
-                                                                    
-//                                if(values[((i-1)/2)][((j-1)/2)] < 10){
-//                                    Serial.print(" ");
-//                                    Serial.print("  ");                                  
-//                                } else {
-//                                    Serial.print("  ");
-//                                    Serial.print(" ");                                  
-//                                }      
-                           }
-                         
-
-                          //If value > Max-goal-value -> print spaces/not visible
-                        }  else {
-//                                if(values[((i-1)/2)][((j-1)/2)] < 10){
-//                                    Serial.print(" ");
-//                                    Serial.print("  ");                                  
-//                                } else {
-//                                    Serial.print("  ");
-//                                    Serial.print(" ");                                  
-//                                }                          
-                        }
+                                }                                                                                                                      
+                            }
+                        }  
                     }          
                                                           
                 }
                              
             }
-//             Serial.print("\n"); 
         }
-//        Serial.print("\n");
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //PRINTING
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
            for(int i = 0;i < 2*ROWS_wall+1;i++)
            {
@@ -802,6 +672,19 @@ void loop()
          }
     }
  }
+
+Serial.println("");
+Serial.println("COMMANDS (DEPENDENT ON ORIENTATION:");
+
+ for (int k = (Max_Value_Goal); k >= 0; k--)
+ {
+      Serial.print(commandArray[k]);
+      Serial.print(" ");
+ }
+
+// Interpret commands/direction sequence (to send to Robot for auto mode)
+
+//TODO
 
   while (true) {};
   
