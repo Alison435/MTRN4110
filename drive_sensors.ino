@@ -1,8 +1,4 @@
-// Combining Driving + Sensors 
-
-// MTRN4110 Phase B : DRIVING
-// Created by Jonathan Loong (z5014751) 
-// Date: 26/6/2019
+// Combining Driving and Exploration 
 
 // Including API Libraries
 #include <units.h>
@@ -201,6 +197,13 @@ void robotStop()
   left_motor::stop();
 }
 
+void resetAllEncoders()
+{
+  eCountL = 0;
+  eCountR = 0;
+  delay(10);
+}
+
 void robotTurn(int directionVal)
 {
 
@@ -213,7 +216,7 @@ void robotTurn(int directionVal)
   {
     //Right + and Left -
 
-    while (abs(eCountR) <= COUNT_PER_REV/3.20)
+    while (abs(eCountR) <= COUNT_PER_REV/3.10)
     {
       motorControl(0,0,setSpeedPerc,setSpeedPerc);    
     }
@@ -333,6 +336,96 @@ void startLEDSequence()
   statusRed::write(logic_level::low);   
 }
 
+void mode_auto()
+{
+
+#ifdef TEST_AUTO
+  
+  //Take in array of commands (5 cells towards goal)
+  //Turn into physical motion
+  //eg: receive array of "^^>^<^"
+  
+  #define MAX_INPUT 45
+  char robotMovements[MAX_INPUT];
+  char moveChar;
+  int move_i = 0;
+  int commandFinished = 0;
+  int newCount = 0;
+  
+  Serial.println("Awaiting commands");
+  while (commandFinished == 0)
+  {
+    while (Serial.available () > 0) //change to Serial1
+    {
+      moveChar = Serial.read();
+      switch (moveChar)
+      {  
+        case('\n'):
+          if (newCount == 0)
+          {
+            newCount = 1;
+            break;                
+          }
+          robotMovements[move_i] = 0; //null terminator
+          commandFinished = 1;
+          //Serial.println(robotMovements);
+          break;
+
+        case '\r':   // discard carriage return
+          break;
+                    
+        default:
+          if (move_i < MAX_INPUT - 1)
+            robotMovements[move_i++] = moveChar; //fill in commandArry 
+          break;
+       }
+   }  
+  }
+
+  Serial.println("--COMMANDS READY--");
+          
+  // Iterate through command Array
+  for (int i = 0; i < MAX_INPUT; i++)
+  {
+    char j = robotMovements[i];
+      
+    switch (j)
+    {  
+      case('^'):
+        //Serial.println("FORWARDS");
+        resetAllEncoders();
+        robotForward(STRAIGHT_DISTANCE,30.0);
+        delay(15);        
+        break;
+    
+      case('>'):
+        //Serial.println("RIGHT");
+        resetAllEncoders();
+        robotTurn(1);
+        delay(15);        
+        break;
+    
+      case('<'):        
+        //Serial.println("LEFT");
+        resetAllEncoders();
+        robotTurn(0);
+        delay(15);        
+        break;
+                
+     default:
+       break;
+    }
+    delay(100);             
+  }
+
+  // ROBOT is at goal cell:
+  // Green LED OFF and red LED ON
+  statusGreen::write(logic_level::low);
+  statusRed::write(logic_level::high); 
+
+#endif 
+}  
+
 // Timing for hardware tests
 unsigned long explore_test = 0;
 unsigned long led_timer = 0;
@@ -362,79 +455,122 @@ float distance;
 void loop()
 {
 
-   switch(system_mode)
-   {
-      case(MODE_OFF):
+// Uncomment if you want to test exploration autonomously
 
-        // Start ROBOT
-        // Initially Green is OFF and Red if ON
+//   switch(system_mode)
+//   {
+//      case(MODE_OFF):
+//
+//        // Start ROBOT
+//        // Initially Green is OFF and Red if ON
+//  
+//        Serial.println("STARTING");
+//  
+//        statusGreen::write(logic_level::low);
+//        statusRed::write(logic_level::high);  
+//      
+//        if (millis() - led_timer > 3000)
+//        {
+//          led_timer = millis();
+//          startLEDSequence(); //Green LED on
+//          robot_start = true;    //flag raised for robot starting
+//          system_mode = MODE_EXPLORE;
+//        }
+//
+//        break;
+//
+//      case(MODE_EXPLORE):
+//        
+//        Serial.println("EXPLORING");
+//
+//        //Explore and Map until Goal is FOUND
+//
+//         if (millis() - explore_test > 10000)
+//        {
+//          explore_test = millis();
+//          system_mode = MODE_GOAL;
+//          delay(100);
+//        }
+//      
+//        //returns distance in millimeters
+//        //distance = ultrasonicdist();
+//
+//        #ifdef USING_LIDAR
+//          
+//          //returns distance in millimeters
+//          distance = lidarOne.readRangeSingleMillimeters();
+//          distance = lidarTwo.readRangeSingleMillimeters();
+//          
+//        #endif
+//
+//        #ifdef USING_MOTORS
+//          
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn(0);
+//          robotForward(STRAIGHT_DISTANCE,30.0);
+//          robotTurn(1);
+//          
+//        #endif
+//        
+//        break;
+//
+//      case(MODE_GOAL):
+//     
+//        // ROBOT is at goal cell:
+//        // Green LED OFF and red LED ON
+//        Serial.println("GOAL FOUND!!!");
+//        statusGreen::write(logic_level::low);
+//        statusRed::write(logic_level::high);   
+//        robotStop();
+//        delay(1000);
+//
+//        break;
+//
+//      default:       
+//        break;
+//   }
+//   
+//  delay(50);
+
+  // Start LED sequence:
+  statusGreen::write(logic_level::low);
+  statusRed::write(logic_level::high); 
+  resetAllEncoders();
   
-        Serial.println("STARTING");
-  
-        statusGreen::write(logic_level::low);
-        statusRed::write(logic_level::high);  
-      
-        if (millis() - led_timer > 5000)
-        {
-          led_timer = millis();
-          startLEDSequence(); //Green LED on
-          robot_start = true;    //flag raised for robot starting
-          system_mode = MODE_EXPLORE;
-        }
+  // Using Bluetooth Module (COM31) on TX and RX (Serial Port 0)
+  if (Serial.available() > 0)   
+  {
+    drivemode = Serial.read();  
 
+    switch (drivemode)
+    {
+          
+      case 's':
+        startLEDSequence();     
+        robotForward(STRAIGHT_DISTANCE,30.0);
+        resetAllEncoders();  
         break;
 
-      case(MODE_EXPLORE):
-        
-        Serial.println("EXPLORING");
-
-        //Explore and Map until Goal is FOUND
-
-        #ifdef USING_LIDAR
-          
-          //returns distance in millimeters
-          distance = lidarOne.readRangeSingleMillimeters();
-          distance = lidarTwo.readRangeSingleMillimeters();
-          
-        #endif
-
-        //returns distance in millimeters
-        //distance = ultrasonicdist();
-
-        #ifdef USING_MOTORS
-          
-          robotForward(STRAIGHT_DISTANCE,30.0);
-          robotTurn(0);
-          robotForward(STRAIGHT_DISTANCE,30.0);
-          robotTurn(1);
-          
-        #endif
-
-        if (millis() - explore_test > 5000)
-        {
-          explore_test = millis();
-          delay(15);
-          system_mode = MODE_GOAL;
-        }
-        
+      case 'l':
+        startLEDSequence(); 
+        resetAllEncoders();   
+        robotTurn(0);
+        break;
+            
+      case 'r':
+        startLEDSequence();   
+        resetAllEncoders();
+        robotTurn(1);
         break;
 
-      case(MODE_GOAL):
-     
-        // ROBOT is at goal cell:
-        // Green LED OFF and red LED ON
-        Serial.println("GOAL FOUND!!!");
-        statusGreen::write(logic_level::low);
-        statusRed::write(logic_level::high);   
-        robotStop();
-        delay(1000);
-
+      case 'a':
+        startLEDSequence();
+        mode_auto();
+        resetAllEncoders();
         break;
 
-      default:       
-        break;
-   }
-   
-  delay(50);
-       
-}        
+      default:
+        break;           
+     }
+   }     
+}               
