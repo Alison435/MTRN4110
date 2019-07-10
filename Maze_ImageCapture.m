@@ -7,7 +7,7 @@ close all; clear all;
 % is run in 
 maze_image = webcam('Logitech BRIO');
 % maze_image = webcam('USB2.0 HD UVC WebCam');
-% maze_image.Resolution = ('1920x1080');
+maze_image.Resolution = ('1920x1080');
 % maze_image.Exposure=-5;
 % maze_image.Contrast= 80 ;
 % maze_image.Saturation=100;
@@ -16,11 +16,11 @@ maze_image = webcam('Logitech BRIO');
 % Preview image from webcam
 % asdf=capture_image(maze_image,'Maze & Robot Image');
 % clear('maze_image');
-mazeCapture = snapshot(maze_image);
-imshow(mazeCapture);
+mazeCaptureRaw = snapshot(maze_image);
+imshow(mazeCaptureRaw);
 % imwrite(mazeCapture, [mazeCapture, datestr(datetime('now'),'_mm_dd_HH_MM_SS'), '.jpg']);
 % disp([mazeCapture ' captured']);
-
+mazeCapture = imcrop(mazeCaptureRaw,[110 100 1650 905]); % crops image to remove the side walls
 mazeGRAY = rgb2gray(mazeCapture);
 se = strel('square',1);
 se2 = strel('line',2,20);
