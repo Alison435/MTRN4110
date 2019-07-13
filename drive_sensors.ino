@@ -14,7 +14,7 @@ using namespace hardware;
 #define COUNT_PER_REV       1500.0  // 16 CPR * 120:1 gear ratio
 #define CIRCUM              240.0 // mm
 #define CELL_LENGTH         250.0 // mm
-#define STRAIGHT_DISTANCE   225.0
+#define STRAIGHT_DISTANCE   200.0
 
 // Test Defines
 //#define USING_LIDAR
@@ -160,7 +160,7 @@ void robotForward(float distance, float setSpeedPerc)
 
   while (abs(eCountR) < targetCount)
   {
-    motorControl(1,0,rightPWM,leftPWM);
+    motorControl(1,0,rightPWM,leftPWM+0.5);
 
     // calculate the rotation "speed" as a difference in the count from previous cycle.
     lDiff = (abs(eCountL) - prevlCount);
@@ -402,6 +402,8 @@ void mode_auto()
         //Serial.println("RIGHT");
         resetAllEncoders();
         robotTurn(1);
+        resetAllEncoders();
+        robotForward(STRAIGHT_DISTANCE,30.0);
         delay(15);        
         break;
     
@@ -409,6 +411,8 @@ void mode_auto()
         //Serial.println("LEFT");
         resetAllEncoders();
         robotTurn(0);
+        resetAllEncoders();
+        robotForward(STRAIGHT_DISTANCE,30.0);
         delay(15);        
         break;
                 
@@ -546,6 +550,7 @@ void loop()
     {
           
       case 's':
+        digitalWrite(13,HIGH);
         startLEDSequence();     
         robotForward(STRAIGHT_DISTANCE,30.0);
         resetAllEncoders();  
