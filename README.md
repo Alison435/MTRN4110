@@ -7,3 +7,7 @@ Note: Python files run using Python 2.7 in Windows (not virtual environment)
 - vision_command.py = sends a command string of ^>^<^^>^\n to the robot (Arduino loaded with drive_sensors.ino). Runs once (Through Bluetooth)
 - drive_sensors.ino = Arduino file to use for Exploration testing. Contains code for actuation.
 - hardware_definitions.h = driving pin OOP definitions
+
+- PhaseB_Drive_Explore.ino = set up structure for driving with exploration logic (autonomously)
+- drive_sensors.ino = driving with exploration logic (manual)
+- PhaseB_CV_Planning_Auto.ino = whole pipeline for Floodfill + auto mode (robot acts upon directions)
