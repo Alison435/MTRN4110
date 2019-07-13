@@ -332,101 +332,23 @@ void startLEDSequence()
   statusRed::write(logic_level::low);   
 }
 
-void mode_auto()
+void robotLeft()
 {
+  resetAllEncoders();   
+  robotTurn(0); //turn CCW on spot
+  resetAllEncoders();
+  robotForward(STRAIGHT_DISTANCE,30.0); //go forward on cell
+  resetAllEncoders();  
+}
 
-#ifdef TEST_AUTO
-  
-  //Take in array of commands (5 cells towards goal)
-  //Turn into physical motion
-  //eg: receive array of "^^>^<^"
-  
-  //Act upon Floodfill algorithm
-  
-  #define MAX_INPUT 45
-  char robotMovements[MAX_INPUT];
-  char moveChar;
-  int move_i = 0;
-  int commandFinished = 0;
-  int newCount = 0;
-  
-  Serial.println("Awaiting commands");
-  while (commandFinished == 0)
-  {
-    while (Serial.available () > 0) //change to Serial1
-    {
-      moveChar = Serial.read();
-      switch (moveChar)
-      {  
-        case('\n'):
-          if (newCount == 0)
-          {
-            newCount = 1;
-            break;                
-          }
-          robotMovements[move_i] = 0; //null terminator
-          commandFinished = 1;
-          //Serial.println(robotMovements);
-          break;
-
-        case '\r':   // discard carriage return
-          break;
-                    
-        default:
-          if (move_i < MAX_INPUT - 1)
-            robotMovements[move_i++] = moveChar; //fill in commandArry 
-          break;
-       }
-   }  
-  }
-
-  Serial.println("--COMMANDS READY--");
-          
-  // Iterate through command Array
-  for (int i = 0; i < MAX_INPUT; i++)
-  {
-    char j = robotMovements[i];
-      
-    switch (j)
-    {  
-      case('^'):
-        //Serial.println("FORWARDS");
-        resetAllEncoders();
-        robotForward(STRAIGHT_DISTANCE,30.0);
-        delay(15);        
-        break;
-    
-      case('>'):
-        //Serial.println("RIGHT");
-        resetAllEncoders();
-        robotTurn(1);
-        resetAllEncoders();
-        robotForward(STRAIGHT_DISTANCE,30.0);
-        delay(15);        
-        break;
-    
-      case('<'):        
-        //Serial.println("LEFT");
-        resetAllEncoders();
-        robotTurn(0);
-        resetAllEncoders();
-        robotForward(STRAIGHT_DISTANCE,30.0);
-        delay(15);        
-        break;
-                
-     default:
-       break;
-    }
-    delay(100);             
-  }
-
-  // ROBOT is at goal cell:
-  // Green LED OFF and red LED ON
-  statusGreen::write(logic_level::low);
-  statusRed::write(logic_level::high); 
-
-#endif 
-}  
+void robotRight()
+{
+  resetAllEncoders();
+  robotTurn(1); //turn CW on spot
+  resetAllEncoders();
+  robotForward(STRAIGHT_DISTANCE,30.0); //go forward one cell
+  resetAllEncoders();  
+}
 
 // Timing for hardware tests
 unsigned long explore_test = 0;
@@ -471,35 +393,19 @@ void loop()
     {
           
       case 's':
-        digitalWrite(13,HIGH);
         startLEDSequence();     
-        robotForward(STRAIGHT_DISTANCE,30.0); //go forward one cell
-        resetAllEncoders();  
+        robotForward(STRAIGHT_DISTANCE,30.0); //go forward one cell         
         break;
 
       case 'l':
         startLEDSequence(); 
-        resetAllEncoders();   
-        robotTurn(0); //turn CCW on spot
-        resetAllEncoders();
-        robotForward(STRAIGHT_DISTANCE,30.0); //go forward on cell
-        resetAllEncoders();  
+        robotLeft();
         break;
             
       case 'r':
         startLEDSequence();   
-        resetAllEncoders();
-        robotTurn(1); //turn CW on spot
-        resetAllEncoders();
-        robotForward(STRAIGHT_DISTANCE,30.0); //go forward one cell
-        resetAllEncoders();  
+        robotRight();
         break;
-
-//      case 'a':
-//        startLEDSequence();
-//        mode_auto();
-//        resetAllEncoders();
-//        break;
 
       default:
         break;           
