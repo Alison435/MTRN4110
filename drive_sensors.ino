@@ -560,12 +560,16 @@ void loop()
         startLEDSequence(); 
         resetAllEncoders();   
         robotTurn(0);
+        resetAllEncoders();
+        robotForward(STRAIGHT_DISTANCE,30.0);
         break;
             
       case 'r':
         startLEDSequence();   
         resetAllEncoders();
         robotTurn(1);
+        resetAllEncoders();
+        robotForward(STRAIGHT_DISTANCE,30.0);
         break;
 
       case 'a':
