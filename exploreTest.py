@@ -1,6 +1,3 @@
-# Manual Python control over robot
-# Used to test exploration 
-
 # Test script to send commands over Bluetooth
 
 import serial
@@ -29,12 +26,12 @@ def main():
 
         elif (action == 2):
 
-            # Send 2 to activate left turn on spot
+            # Send 2 to make robot left (and move to next cell)
             ser.write('l\n')
 
         elif( action == 3):
 
-            # Send 3 to activate right turn on spot
+            # Send 3 to make robot turn right (and move to next cell)
             ser.write('r\n')
 
         else:
