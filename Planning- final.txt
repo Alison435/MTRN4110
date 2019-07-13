@@ -18,29 +18,29 @@
 
 //MAZE STUFF
 /////////////
-//
-//int horizontalWalls[ROWS_wall+1][COLS_wall];
-//int verticalWalls[ROWS_wall][COLS_wall+1];
+
+int horizontalWalls[ROWS_wall+1][COLS_wall];
+int verticalWalls[ROWS_wall][COLS_wall+1];
 
 
-// vertical walls array
-  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1}, 
-                                                  {1,1,1,0,0,1,0,1,1,1}, 
-                                                  {1,0,0,1,2,2,1,1,1,1}, 
-                                                  {1,0,0,0,1,2,2,2,2,1}, 
-                                                  {1,0,1,0,0,0,1,0,1,1}, 
-                                                                };
-                                     //verticalWalls[5][10]
-                                                                                  
-  // horizontal walls array                                                 
-  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
-                                                     {0,0,1,1,0,1,1,2,2}, 
-                                                     {0,1,0,1,1,1,2,2,1},
-                                                     {1,0,1,1,0,1,2,2,2},
-                                                     {0,1,0,1,0,1,0,1,0},
-                                                     {1,1,1,1,1,1,1,1,1}
-                                                    
-                                                     };            //horizontalWalls[6][9]
+//// vertical walls array
+//  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1}, 
+//                                                  {1,1,1,0,0,1,0,1,1,1}, 
+//                                                  {1,0,0,1,2,2,1,1,1,1}, 
+//                                                  {1,0,0,0,1,2,2,2,2,1}, 
+//                                                  {1,0,1,0,0,0,1,0,1,1}, 
+//                                                                };
+//                                     //verticalWalls[5][10]
+//                                                                                  
+//  // horizontal walls array                                                 
+//  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
+//                                                     {0,0,1,1,0,1,1,2,2}, 
+//                                                     {0,1,0,1,1,1,2,2,1},
+//                                                     {1,0,1,1,0,1,2,2,2},
+//                                                     {0,1,0,1,0,1,0,1,0},
+//                                                     {1,1,1,1,1,1,1,1,1}
+//                                                    
+//                                                     };            //horizontalWalls[6][9]
                                                      
 
 //// vertical walls array
@@ -101,9 +101,8 @@ int goalCol = 4;
 //Maximum value is the goal value
 int Max_Value_Goal;
 
-char commandArray[(ROWS_wall*ROWS_wall)];
+char commandArray[(ROWS_wall*ROWS_wall)]; //used to intepret results
 int command_i = 0;
-
 int x = 0;
 
 ///STORING VALUES STUFF FROM SERIAL INPUT
@@ -141,7 +140,7 @@ void setup() {
 
   //GOOD
   //get maze layout
-  //Get_Maze_Layout();
+  Get_Maze_Layout();
   
   //GOOD
   //get intial mouse direction
@@ -158,9 +157,7 @@ void setup() {
   //print maze
   Print_Maze();
 
-  //print rest of flood value
-  //print_rest();
-
+  digitalWrite(13,LOW);
 }
 
 ///////////////////////////////////
@@ -169,69 +166,106 @@ void setup() {
 
 //get maze layout
 void Get_Maze_Layout(){
+
+  // Parsing entire line through serial (testing horz and vert maze input)
+  // and filling in array_H and array_V (used for Floodfill)
   
-  //Start storing horizontal array
-  Serial.print("Please enter 54 values for array_H from top to bottom and left to right\n");
-  while(h<H_size){
-      if (Serial.available() > 0) {   // something came across serial
-        integerValue = 0;         // throw away previous integerValue
-        while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial.read();
-          if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
-          if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
-          if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
-          integerValue *= 10;  // shift left 1 decimal place
-          // convert ASCII to integer, add, and shift left 1 decimal place
-          integerValue = ((incomingByte - 48) + integerValue);
-        }
-        array_H[h] = integerValue;  
-        h++;
-    }
-  }
+  #define MAX_INPUT_HORZ 54
+  #define MAX_INPUT_VERT 50
 
-  //Start storing vertical array
-  Serial.print("Please enter 50 values for array_V from top to bottom and left to right\n");
+  // Counters for horizontal and vertical input arrays
+  int ihorz = 0;
+  int ivert = 0;
+
+  // Flags for when input string is completed
+  int allHorzWalls = 0;
+  int allVertWalls = 0;    
+
+  int integerValue = 0;
+  //result * 10 + ( num[i] - '0' );
+
+  Serial.println("Please enter all 50 Vertical values for array (top to bottom, left ot right)"); 
+  while (allVertWalls == 0)
+  {
+    while (Serial.available () > 0)
+    {
+      char detectedWallV = Serial.read();
+      integerValue = 0;
+      switch (detectedWallV)
+      {  
+        case('\n'):         
+          //array_V[ivert] = 0; //null terminator
+          allVertWalls = 1;
+          delay(15);
+          break;
+
+        case '\r':   // discard carriage return
+          break;
+                    
+        default:
+          if (ivert < MAX_INPUT_VERT)
+            integerValue *= 10;
+            integerValue = ((detectedWallV - '0') + integerValue);
+            array_V[ivert++] = integerValue; //fill in array_V            
+          break;
+       }
+    }  
+  }
+  Serial.println("Vertical DONE");
+  delay(15);  
+
+  Serial.println("Please enter all 54 Horizontal values for array (top to bottom, left ot right)");
+  while (allHorzWalls == 0)
+  {
+    while (Serial.available () > 0)
+    {
+      char detectedWallH = Serial.read();
+      integerValue = 0;
+      switch (detectedWallH)
+      {  
+        case('\n'):         
+          //array_H[ihorz] = 0; //null terminator
+          allHorzWalls = 1;
+          delay(15);
+          break;
+
+        case '\r':   // discard carriage return
+          break;
+                             
+        default:
+          if (ihorz < MAX_INPUT_HORZ)
+            integerValue *= 10;
+            integerValue = ((detectedWallH - '0') + integerValue);
+            array_H[ihorz++] = integerValue; //fill in array_H           
+          break;
+       }
+    }  
+  }
+  
+  Serial.println("Horizontal DONE");
+  
+/////////////////////////////////////
+
+  Serial.println("The array string entered for Vertical array is ");
+  //print array_V
+  v = 0 ;
   while(v<V_size){
-      if (Serial.available() > 0) {   // something came across serial
-        integerValue = 0;         // throw away previous integerValue
-        while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial.read();
-          if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
-          if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
-          if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
-          integerValue *= 10;  // shift left 1 decimal place
-          // convert ASCII to integer, add, and shift left 1 decimal place
-          integerValue = ((incomingByte - 48) + integerValue);
-        }
-        array_V[v] = integerValue;  
-        v++;
-    }
+      Serial.print(array_V[v]);  
+      v++;
   }
+  Serial.print("\n");
 
-///////////////////////////////////////
-//
-//  Serial.print("The array string entered for Horizontal array is ");
-//  //Print array contents
-//  //print array_H
-//  h = 0 ;
-//  while(h< H_size){
-//      Serial.print(bool(array_H[h]));  
-//      h++;
-//  }
-//  
-//  Serial.print("\n");
-//
-//  Serial.print("The array string entered for Vertical array is ");
-//  //print array_V
-//  v = 0 ;
-//  while(v<V_size){
-//      Serial.print(bool(array_V[v]));  
-//      v++;
-//  }
-//
-//  Serial.print("\n");
-//
-///////////////////////////////////////
+    Serial.println("The array string entered for Horizontal array is ");
+  //Print array contents
+  //print array_H
+  h = 0 ;
+  while(h< H_size){
+      Serial.print(array_H[h]);  
+      h++;
+  }
+  Serial.print("\n");
+
+/////////////////////////////////////
 
 
 ////Convert array to suitable size array
@@ -665,27 +699,86 @@ void flood_fill(){
 void loop()
 {
 
- Serial.println("COORDINATES OF VALID PATH:");
- for(int row = 0;row < ROWS_wall; row++){
-    for(int col = 0; col < COLS_wall; col++){
-         if (values[row][col] == 'p')
-         {
-          Serial.print("{");
-          Serial.print(row); Serial.print(","); Serial.print(col);
-          Serial.print("} ");
-         }
-    }
- }
+// Serial.println("COORDINATES OF VALID PATH:");
+// for(int row = 0;row < ROWS_wall; row++){
+//    for(int col = 0; col < COLS_wall; col++){
+//         if (values[row][col] == 'p')
+//         {
+//          Serial.print("{");
+//          Serial.print(row); Serial.print(","); Serial.print(col);
+//          Serial.print("} ");
+//         }
+//    }
+// }
 
 Serial.println("");
-Serial.println("COMMANDS (DEPENDENT ON ORIENTATION:");
+Serial.println("COMMANDS FOR ROBOT MOVEMENT:");
 
- for (int k = (Max_Value_Goal); k >= 0; k--)
- {
-      Serial.print(commandArray[k]);
-      Serial.print(" ");
- }
 
+     for (int k = Max_Value_Goal; k >= 0; k--)
+     {      
+          if(commandArray[k] == 'N'){
+              if(commandArray[k-1] == 'W' ){
+                  Serial.print("forward"); Serial.print("   ");  
+                  Serial.print("Turn Left"); Serial.print("   ");  
+              
+              } else if(commandArray[k-1] == 'E'){
+                  Serial.print("forward"); Serial.print("   ");
+                  Serial.print("Turn Right"); Serial.print("   ");  
+                                                    
+              } else if(commandArray[k-1] == 'N'){
+                  Serial.print("forward"); Serial.print("   ");                 
+              }else {
+                  Serial.print("forward"); Serial.print("   ");                 
+              }   
+//////////////////////////////////////////////    
+          } else if(commandArray[k] == 'S'){
+              if(commandArray[k-1] == 'W' ){
+                  
+                  Serial.print("forward"); Serial.print("   ");   
+                  Serial.print("Turn Right"); Serial.print("   ");
+           
+              } else if(commandArray[k-1] == 'E'){
+                  Serial.print("forward"); Serial.print("   ");                   
+                  Serial.print("Turn Left"); Serial.print("   ");  
+              
+              } else if(commandArray[k-1] == 'S'){
+                  Serial.print("forward"); Serial.print("   ");                 
+              }else {
+                  Serial.print("forward"); Serial.print("   ");                 
+              }   
+//////////////////////////////////////////////               
+          } else if(commandArray[k] == 'E'){
+              if(commandArray[k-1] == 'N' ){
+                  Serial.print("forward"); Serial.print("   ");
+                  Serial.print("Turn Left"); Serial.print("   ");  
+               
+              } else if(commandArray[k-1] == 'S'){
+                  Serial.print("forward"); Serial.print("   ");
+                  Serial.print("Turn Right"); Serial.print("   ");  
+                
+              } else if(commandArray[k-1] == 'E'){
+                  Serial.print("forward"); Serial.print("   ");                                
+              }else {
+                  Serial.print("forward"); Serial.print("   ");                 
+              }  
+//////////////////////////////////////////////                     
+          } else if(commandArray[k] == 'W'){
+              if(commandArray[k-1] == 'N' ){
+                  Serial.print("forward"); Serial.print("   ");
+                  Serial.print("Turn Right"); Serial.print("   ");  
+              
+              } else if(commandArray[k-1] == 'S'){
+                  Serial.print("forward"); Serial.print("   ");
+                  Serial.print("Turn Left"); Serial.print("   ");  
+                 
+              } else if(commandArray[k-1] == 'W'){
+                  Serial.print("forward"); Serial.print("   ");                                
+              }else {
+                  Serial.print("forward"); Serial.print("   ");                 
+              }      
+          }  
+     }
 // Interpret commands/direction sequence (to send to Robot for auto mode)
 
 //TODO
