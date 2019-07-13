@@ -1,4 +1,5 @@
 // Combining Driving and Exploration 
+// TODO: include logic for wall detection and move decisions (EXPLORATION)
 
 // Including API Libraries
 #include <units.h>
@@ -385,10 +386,13 @@ void loop()
   resetAllEncoders();
   
   // Using Bluetooth Module (COM31) on TX and RX (Serial Port 0)
+  // Manual testing of exploration logic and actuation
   if (Serial.available() > 0)   
   {
     drivemode = Serial.read();  
 
+    // Physical motion after each decision is made
+    // TODO: synthesise actuation with logic autonomously
     switch (drivemode)
     {
           
@@ -407,8 +411,20 @@ void loop()
         robotRight();
         break;
 
+      //reverse if dead end found
+      case 'b':
+        startLEDSequence();   
+        robotTurn(0); //turn CCW on spot
+        delay(10);
+        robotTurn(0); //turn CCW on spot;
+        break;
+        
       default:
         break;           
      }
+
+  //Check which direction to go next
+  //Lidar/Ultrasonic -> forward, reverse, right or left
+     
    }     
 }               
