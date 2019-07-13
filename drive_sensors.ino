@@ -4,8 +4,8 @@
 #include <units.h>
 #include <hardware.h>
 #include <hardware_definition.h>
-#include <external_VL6180X.h>
 #include <Wire.h>
+#include <Sensors.h>
 
 // Avoids prepending scope operator to all functions
 using namespace hardware;
@@ -35,10 +35,6 @@ volatile byte pinAcountR;
 volatile byte pinAcountL;
 boolean DirectionR = true; // Rotation direction for right motor
 boolean DirectionL = true; // Rotation direction for left motor
-
-// Instantiate Lidars
-VL6180X lidarOne;
-VL6180X lidarTwo;
 
 void setUpUltrasonic()
 {
@@ -345,6 +341,8 @@ void mode_auto()
   //Turn into physical motion
   //eg: receive array of "^^>^<^"
   
+  //Act upon Floodfill algorithm
+  
   #define MAX_INPUT 45
   char robotMovements[MAX_INPUT];
   char moveChar;
@@ -459,83 +457,6 @@ float distance;
 void loop()
 {
 
-// Uncomment if you want to test exploration autonomously
-
-//   switch(system_mode)
-//   {
-//      case(MODE_OFF):
-//
-//        // Start ROBOT
-//        // Initially Green is OFF and Red if ON
-//  
-//        Serial.println("STARTING");
-//  
-//        statusGreen::write(logic_level::low);
-//        statusRed::write(logic_level::high);  
-//      
-//        if (millis() - led_timer > 3000)
-//        {
-//          led_timer = millis();
-//          startLEDSequence(); //Green LED on
-//          robot_start = true;    //flag raised for robot starting
-//          system_mode = MODE_EXPLORE;
-//        }
-//
-//        break;
-//
-//      case(MODE_EXPLORE):
-//        
-//        Serial.println("EXPLORING");
-//
-//        //Explore and Map until Goal is FOUND
-//
-//         if (millis() - explore_test > 10000)
-//        {
-//          explore_test = millis();
-//          system_mode = MODE_GOAL;
-//          delay(100);
-//        }
-//      
-//        //returns distance in millimeters
-//        //distance = ultrasonicdist();
-//
-//        #ifdef USING_LIDAR
-//          
-//          //returns distance in millimeters
-//          distance = lidarOne.readRangeSingleMillimeters();
-//          distance = lidarTwo.readRangeSingleMillimeters();
-//          
-//        #endif
-//
-//        #ifdef USING_MOTORS
-//
-//            resetAllEncoders();  
-//            robotForward(STRAIGHT_DISTANCE,30.0);
-//            robotTurn(1);
-//            robotTurn(0);        
-//          
-//        #endif
-//        
-//        break;
-//
-//      case(MODE_GOAL):
-//     
-//        // ROBOT is at goal cell:
-//        // Green LED OFF and red LED ON
-//        Serial.println("GOAL FOUND!!!");
-//        statusGreen::write(logic_level::low);
-//        statusRed::write(logic_level::high);   
-//        robotStop();
-//        delay(1000);
-//
-//        break;
-//
-//      default:       
-//        break;
-//   }
-//   
-//  delay(50);
-
   // Start LED sequence:
   statusGreen::write(logic_level::low);
   statusRed::write(logic_level::high); 
@@ -552,33 +473,33 @@ void loop()
       case 's':
         digitalWrite(13,HIGH);
         startLEDSequence();     
-        robotForward(STRAIGHT_DISTANCE,30.0);
+        robotForward(STRAIGHT_DISTANCE,30.0); //go forward one cell
         resetAllEncoders();  
         break;
 
       case 'l':
         startLEDSequence(); 
         resetAllEncoders();   
-        robotTurn(0);
+        robotTurn(0); //turn CCW on spot
         resetAllEncoders();
-        robotForward(STRAIGHT_DISTANCE,30.0);
+        robotForward(STRAIGHT_DISTANCE,30.0); //go forward on cell
         resetAllEncoders();  
         break;
             
       case 'r':
         startLEDSequence();   
         resetAllEncoders();
-        robotTurn(1);
+        robotTurn(1); //turn CW on spot
         resetAllEncoders();
-        robotForward(STRAIGHT_DISTANCE,30.0);
+        robotForward(STRAIGHT_DISTANCE,30.0); //go forward one cell
         resetAllEncoders();  
         break;
 
-      case 'a':
-        startLEDSequence();
-        mode_auto();
-        resetAllEncoders();
-        break;
+//      case 'a':
+//        startLEDSequence();
+//        mode_auto();
+//        resetAllEncoders();
+//        break;
 
       default:
         break;           
