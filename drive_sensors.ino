@@ -508,11 +508,11 @@ void loop()
 //        #endif
 //
 //        #ifdef USING_MOTORS
-//          
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn(0);
-//          robotForward(STRAIGHT_DISTANCE,30.0);
-//          robotTurn(1);
+//
+//            resetAllEncoders();  
+//            robotForward(STRAIGHT_DISTANCE,30.0);
+//            robotTurn(1);
+//            robotTurn(0);        
 //          
 //        #endif
 //        
@@ -562,6 +562,7 @@ void loop()
         robotTurn(0);
         resetAllEncoders();
         robotForward(STRAIGHT_DISTANCE,30.0);
+        resetAllEncoders();  
         break;
             
       case 'r':
@@ -570,6 +571,7 @@ void loop()
         robotTurn(1);
         resetAllEncoders();
         robotForward(STRAIGHT_DISTANCE,30.0);
+        resetAllEncoders();  
         break;
 
       case 'a':
