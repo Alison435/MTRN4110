@@ -1,4 +1,5 @@
-# Test script to send commands over Bluetooth
+# Test script to send commands over Bluetooth for
+# Manual Exploration testing
 
 import serial
 import time
@@ -33,6 +34,11 @@ def main():
 
             # Send 3 to make robot turn right (and move to next cell)
             ser.write('r\n')
+
+        elif( action == 4):
+
+            # Send 4 to make robot reverse
+            ser.write('b\n')
 
         else:
 
