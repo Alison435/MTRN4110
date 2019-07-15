@@ -359,7 +359,8 @@ char drivemode;
 
 void setup() {
 
-  Serial.begin(9600);  
+  Serial.begin(9600);
+  Serial1.begin(9600);  
   setupDigitalPins();
   setupMotor(); 
   setupEncoderWheel(); 
@@ -387,9 +388,9 @@ void loop()
   
   // Using Bluetooth Module (COM31) on TX and RX (Serial Port 0)
   // Manual testing of exploration logic and actuation
-  if (Serial.available() > 0)   
+  if (Serial1.available() > 0)   
   {
-    drivemode = Serial.read();  
+    drivemode = Serial1.read();  
 
     // Physical motion after each decision is made
     // TODO: synthesise actuation with logic autonomously
@@ -413,10 +414,13 @@ void loop()
 
       //reverse if dead end found
       case 'b':
-        startLEDSequence();   
+        startLEDSequence();
+        resetAllEncoders(); 
         robotTurn(0); //turn CCW on spot
-        delay(10);
+        resetAllEncoders();
+        delay(15);
         robotTurn(0); //turn CCW on spot;
+        resetAllEncoders();
         break;
         
       default:
