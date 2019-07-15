@@ -3,6 +3,13 @@
 // 2. Floodfill algorithm and path planning
 // 3. Robot then acts upon path planning instructions
 
+/*
+Vertical
+1000100001 1110010111 1001221111 1000122221 1010001011
+Horizontal
+111111111 001101122 010111221 101101222 010101010 111111111
+ */
+
 //////////////////////////////////
 
 //PUT SERIAL MONITOR IN NEWLINE MODE
@@ -404,7 +411,7 @@ void setup() {
 
   //Setup Serial
   Serial.begin(9600);
-  //Serial1.begin(9600);
+  Serial1.begin(9600);
   
   setupDigitalPins();
   setupMotor(); 
@@ -459,9 +466,9 @@ void Get_Maze_Layout(){
   Serial.println("Please enter all 50 Vertical values for array (top to bottom, left ot right)"); 
   while (allVertWalls == 0)
   {
-    while (Serial.available () > 0)
+    while (Serial1.available () > 0)
     {
-      char detectedWallV = Serial.read();
+      char detectedWallV = Serial1.read();
       integerValue = 0;
       switch (detectedWallV)
       {  
@@ -489,9 +496,9 @@ void Get_Maze_Layout(){
   Serial.println("Please enter all 54 Horizontal values for array (top to bottom, left ot right)");
   while (allHorzWalls == 0)
   {
-    while (Serial.available () > 0)
+    while (Serial1.available () > 0)
     {
-      char detectedWallH = Serial.read();
+      char detectedWallH = Serial1.read();
       integerValue = 0;
       switch (detectedWallH)
       {  
@@ -804,10 +811,10 @@ void Get_Dir(){
   int direction;
   h=0;
   while(h<1){
-      if (Serial.available() > 0) {   // something came across serial
+      if (Serial1.available() > 0) {   // something came across serial
         integerValue = 0;         // throw away previous integerValue
         while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial.read();
+          incomingByte = Serial1.read();
           if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
           if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
           if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
@@ -838,10 +845,10 @@ void Get_Start(){
   Serial.print("Please enter start row position of mouse\n");
   h=0;
   while(h<1){
-      if (Serial.available() > 0) {   // something came across serial
+      if (Serial1.available() > 0) {   // something came across serial
         integerValue = 0;         // throw away previous integerValue
         while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial.read();
+          incomingByte = Serial1.read();
           if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
           if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
           if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
@@ -858,10 +865,10 @@ void Get_Start(){
   Serial.print("Please enter start column position of mouse\n");
   h=0;
   while(h<1){
-      if (Serial.available() > 0) {   // something came across serial
+      if (Serial1.available() > 0) {   // something came across serial
         integerValue = 0;         // throw away previous integerValue
         while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial.read();
+          incomingByte = Serial1.read();
           if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
           if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
           if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
@@ -1090,7 +1097,7 @@ Serial.println("COMMANDS FOR ROBOT MOVEMENT:");
     switch (j)
     {  
       case('^'):
-        Serial.print("^");
+        //Serial.print("^");
         resetAllEncoders();
         robotForward(STRAIGHT_DISTANCE,30.0);
         resetAllEncoders();
@@ -1098,7 +1105,7 @@ Serial.println("COMMANDS FOR ROBOT MOVEMENT:");
         break;
     
       case('>'):
-        Serial.print(">");
+        //Serial.print(">");
         resetAllEncoders();
         robotTurn(1);
         resetAllEncoders();
@@ -1106,7 +1113,7 @@ Serial.println("COMMANDS FOR ROBOT MOVEMENT:");
         break;
     
       case('<'):        
-        Serial.print("<");
+        //Serial.print("<");
         resetAllEncoders();
         robotTurn(0);
         resetAllEncoders();
