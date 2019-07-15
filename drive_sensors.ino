@@ -40,6 +40,7 @@ int Hmap[10][10];  //global maze map horizontal extended
 int Vmap[10][10];  //global maze map vertical extended
 int Hmaze[ROW][COL];  //truncated maze
 int Vmaze[ROW][COL];
+int printonce = 0;
 
 // Encoder variables for Phase A
 volatile int eCountR = 0; 
@@ -799,5 +800,10 @@ void loop()
     //Check which direction to go next
     //Lidar/Ultrasonic -> forward, reverse, right or left
      }     
+  }
+  if (printonce == 0)
+  {
+    printMaze(northCount);
+    printonce++;
   }
 }               
