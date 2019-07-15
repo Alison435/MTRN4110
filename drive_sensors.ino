@@ -19,9 +19,9 @@ using namespace hardware;
 
 // wall detection
 #define SIDEMAX 50
-#define SIDEMIN 20
-#define FRONTMAX 60
-#define FRONTMIN 30
+#define SIDEMIN 10
+#define FRONTMAX 40
+#define FRONTMIN 20
 
 
 #define ROW 6  //number of row and col to print out = num of cells + 1
@@ -55,67 +55,65 @@ void setUpUltrasonic()
   //Ultrasonic set up
   pinMode(TRIGGER_PIN, OUTPUT); // Sets the TRIGGER_PIN as an Output
   pinMode(ECHO_PIN, INPUT); // Sets the ECHO_PIN as an Input
-  //Serial.println("Ultrasonic initialised");
+  Serial.println("Ultrasonic initialised");
 }
 
 void setUpLidars()
 {
- // #ifdef USING_LIDAR
-     
+  //Setting address for lidars
   pinMode(LIDARONE,OUTPUT);
   pinMode(LIDARTWO,OUTPUT);
-  digitalWrite(LIDARTWO, HIGH);//enable lidar two
-  digitalWrite(LIDARONE, LOW); //shut down lidar one before chaning address
+
+  digitalWrite(LIDARONE, HIGH);//enable lidar two
+  digitalWrite(LIDARTWO, LOW); //shut down lidar one before chaning address
   delay(100);
-  lidarTwo.setAddress(0x30);
+  lidarOne.setAddress(0x30);
   delay(10);
-  digitalWrite(LIDARONE, HIGH);//enable lidar one 
+  digitalWrite(LIDARTWO, HIGH);//enable lidar one 
   
-  lidarTwo.init();
-  Serial.println("Lidar Two initialised");
-  lidarTwo.configureDefault();
-  lidarTwo.setTimeout(500);
-  
-  lidarOne.init();              //lidar one uses default address
+  lidarOne.init();
   Serial.println("Lidar One initialised");
   lidarOne.configureDefault();
   lidarOne.setTimeout(500);
+  
+  lidarTwo.init();              //lidar one uses default address
+  Serial.println("Lidar Two initialised");
+  lidarTwo.configureDefault();
+  lidarTwo.setTimeout(500);
     
-// #endif USING_LIDAR
-
 }
 
 void setupimu() {
-  pinMode(INTERRUPT_PIN, INPUT);
+  pinMode(18, INPUT);
   imu.initialize();
   Serial.println(imu.testConnection() ? "IMU initialised" : "imu6050 connection failed");
   devStatus = imu.dmpInitialize();
   
   Serial.println("Starting offset");
-  int TheOffsets[6] = {-4091, -587, 2145, 299, -26, 43};
   SetOffsets(TheOffsets);
   Serial.println("Offsets done");
-
+  
+  //set up for dmp
   if (devStatus == 0) {
-    // turn on the DMP, now that it's ready
-    Serial.println(F("Enabling DMP..."));
-    imu.setDMPEnabled(true);
+      // turn on the DMP, now that it's ready
+      Serial.println(F("Enabling DMP..."));
+      imu.setDMPEnabled(true);
   
-    // enable Arduino interrupt detection
-    attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
-    imuIntStatus = imu.getIntStatus();
+      // enable Arduino interrupt detection
+      attachInterrupt(digitalPinToInterrupt(18), dmpDataReady, RISING);
+      imuIntStatus = imu.getIntStatus();
   
-    // set our DMP Ready flag so the main loop() function knows it's okay to use it
-    dmpReady = true;
+      // set our DMP Ready flag so the main loop() function knows it's okay to use it
+      dmpReady = true;
   
-    // get expected DMP packet size for later comparison
-    packetSize = imu.dmpGetFIFOPacketSize();
+      // get expected DMP packet size for later comparison
+      packetSize = imu.dmpGetFIFOPacketSize();
   } else {
-    // ERROR!
-    // 1 = initial memory load failed
-    // 2 = DMP configuration updates failed
-    // (if it's going to break, usually the code will be 1)
-    Serial.print(F("DMP Initialization failed (code "));
+      // ERROR!
+      // 1 = initial memory load failed
+      // 2 = DMP configuration updates failed
+      // (if it's going to break, usually the code will be 1)
+      Serial.print(F("DMP Initialization failed (code "));
   }
 }
 
@@ -417,17 +415,16 @@ void startphaseb() {
     //if anything is within 50mm, increase count
     //if object is within 50mm for 10 samples - set flag
     //need to test accuracy of measurements
-    Serial.println(distance);
     if (distance <= 40) {
       count += 1;
-      if (count == 5) {
+      if (count == 10) {
         seen = true;
-        Serial.println("seen");
+       // Serial.println("seen");
       }
     } else if (seen == true) {
       ucount += 1;
-      Serial.print("unseen");
-      if (ucount == 5) {
+      //Serial.print("unseen");
+      if (ucount == 10) {
         break;
       }
     }
@@ -450,13 +447,16 @@ bool wall(float distance, int maxv, int minv) {
 //returns compass direction of robot
 int compass() {
   int temp;
+  if (!gyro()) 
+    gyro();
+    
   if (gzf >= -45 && gzf <= 45) {
       temp = NORTH;
     } else if (gzf > 45 && gzf <= 135)
       temp = EAST;
     else if (gzf > 135 || gzf < -135) {
       temp = SOUTH; 
-    } else if (gzf >= -135 && gxf <= -45) {
+    } else if (gzf >= -135 && gzf <= -45) {
       temp = WEST;
     }
   return temp;
@@ -476,12 +476,16 @@ void SetOffsets(int TheOffsets[6]) {
 
 //returns 1 if successfully updated values
 bool gyro() {
-  bool success = false;
+  bool success;
+  int failcount = 0;
   if (!dmpReady) return;
 
     // wait for imu interrupt or extra packet(s) available
     while (!imuInterrupt && fifoCount < packetSize) {
-
+      if (++failcount >= 100) {
+        success = false;
+        break;
+      }
     }
 
     // reset interrupt flag and get INT_STATUS byte
@@ -513,7 +517,7 @@ bool gyro() {
         // display Euler angles in degrees
         imu.dmpGetQuaternion(&q, fifoBuffer);
         imu.dmpGetGravity(&gravity, &q);
-//        imu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+        imu.dmpGetYawPitchRoll(ypr, &q, &gravity);
         gxf = ypr[1]*180/M_PI;
         gyf = ypr[2]*180/M_PI;
         gzf = ypr[0]*180/M_PI;
@@ -521,6 +525,17 @@ bool gyro() {
         success = true;
     }
     return success;
+}
+
+//handles case where start pos is different
+short othersp(bool swapdir, short compassd) {
+  if (swapdir) {
+    if (compassd == EAST)
+      compassd = WEST;
+    else if (compassd == WEST)
+      compassd = EAST;
+  }
+  return compassd;
 }
 
 //return the overall number of times you have gone north
@@ -546,10 +561,6 @@ int explore() {
   //my_stack = new_Stack();  /* Initialize new stack */
   
   while (!goal) {
-
-    //call gyro again if overflow occurs
-    if (!gyro()) 
-      gyro();
       
     //only run this loop if you have moved to another cell
     if (moved == true) {
@@ -590,24 +601,24 @@ int explore() {
 void storemaze(short compassd, short i, short j, int L1wall, int L2wall, int ultrawall) {
     switch(compassd) {
     case NORTH:
-      Hmap[i][j] = ultrawall;
-      Vmap[i][j+1] = L2wall; //assume l2 is on the right when facing north
+      Hmap[i+1][j] = ultrawall;
+      Vmap[i][j+1] = L2wall; //assume l2 is on the left when facing north
       Vmap[i][j] = L1wall;
       break;
     case EAST:
-      Vmap[i][j+1] = ultrawall;
-      Hmap[i][j] = L1wall;
+      Vmap[i][j] = ultrawall;
       Hmap[i+1][j] = L2wall;
+      Hmap[i][j] = L1wall;
       break;
     case SOUTH:
-      Hmap[i+1][j] = ultrawall;
+      Hmap[i][j] = ultrawall;
       Vmap[i][j+1] = L1wall;
       Vmap[i][j] = L2wall;
       break;
     case WEST:
-      Vmap[i][j] = ultrawall;
-      Hmap[i][j] = L2wall;
+      Vmap[i][j+1] = ultrawall;
       Hmap[i+1][j] = L1wall;
+      Hmap[i][j] = L2wall;
       break;
   }
 }
@@ -648,7 +659,7 @@ void extract9by5() {
 
 //prints Hmaze and Vmaze combined
 void printMaze(int northCount) {
-  for(int i = 0;i < 2*(ROW-1)+1; i++) {
+  for(int i = 0;i < 2*(10-1)+1; i++) {
     for(int j = 0;j < 2*(COL-1)+1 ;j++)
     {
         //Add Horizontal Walls
@@ -665,15 +676,17 @@ void printMaze(int northCount) {
         //Add Vertical Walls
         if(i%2 == 1 && j%2 == 0)
         {
-            if (i == 1 && j == 0) 
+            /*if (i == 1 && j == 0) 
             {
               if (northCount == 5)
                 Serial.print("| W "); 
               else if (northCount == 3)
                 Serial.print("| S ");
-            }
+              else
+                Serial.print("* U ");
+            }*/
               
-            else if(Vmap[i/2][j/2] == true)
+            if(Vmap[i/2][j/2] == true)
               Serial.print("|   ");
             else if (Vmap[i/2][j/2] == false)
               Serial.print("    ");
@@ -687,14 +700,16 @@ void printMaze(int northCount) {
 
 
 void setup() {
-
+  Wire.begin(); 
   Serial.begin(9600);
   Serial1.begin(9600);  
+  setUpLidars();
+  setUpUltrasonic();
+  setupimu();
   setupDigitalPins();
   setupMotor(); 
   setupEncoderWheel(); 
-  setUpLidars();
-  setUpUltrasonic();
+
   pinMode(13,OUTPUT); 
   delay(100);
 }
@@ -705,11 +720,9 @@ void setup() {
 #define MODE_GOAL 3
 int system_mode = MODE_OFF;
 
-float distance;  
-
 void loop()
 {
-  short compassd; //contains compass direction
+  short compassd =0; //contains compass direction
   int northCount = 0;
   bool ultrawall; //ultrasonic wall
   bool L1wall;  //lidar one wall
@@ -717,12 +730,14 @@ void loop()
   bool goal = 0;
   short i = 0;  //row
   short j = 0;  //col
+  bool firstturn = 0;
+  bool swapdir = 0;
   
   // Start LED sequence:
   statusGreen::write(logic_level::low);
   statusRed::write(logic_level::high); 
   resetAllEncoders();
-
+  
   if (!robot_start){
     Serial.println("robot starting phase");
     startphaseb();
@@ -731,6 +746,19 @@ void loop()
   if (robot_start) {
     statusGreen::write(logic_level::high);
     statusRed::write(logic_level::low);
+    for (int a =0; a <= 9; a++) {
+      for (int b =0; b <= 9; b++) {
+        Hmap[a][b] = 2;
+        Vmap[a][b] = 2;
+      }
+    }
+    delay(200); //to ensure no false read of start position
+
+    //initial scan
+    ultrawall = wall(ultrasonicdist(), FRONTMAX, FRONTMIN);
+    L1wall = wall(lidarOne.readRangeSingleMillimeters(), SIDEMAX, SIDEMIN);
+    L2wall = wall(lidarTwo.readRangeSingleMillimeters(), SIDEMAX, SIDEMIN);
+    storemaze(compassd, i, j, L1wall, L2wall, ultrawall);
   }
   
   // Using Bluetooth Module (COM31) on TX and RX (Serial Port 0)
@@ -747,67 +775,86 @@ void loop()
             
         case 's':
           startLEDSequence();     
-          robotForward(STRAIGHT_DISTANCE,30.0); //go forward one cell         
+          //robotForward(STRAIGHT_DISTANCE,30.0); //go forward one cell         
           break;
   
         case 'l':
           startLEDSequence(); 
-          robotLeft();
+          //robotLeft();
           break;
               
         case 'r':
           startLEDSequence();   
-          robotRight();
+          //robotRight();
           break;
   
         //reverse if dead end found
         case 'b':
           startLEDSequence();
-          resetAllEncoders(); 
-          robotTurn(0); //turn CCW on spot
-          resetAllEncoders();
-          delay(15);
-          robotTurn(0); //turn CCW on spot;
-          resetAllEncoders();
-          break;
-
-        //break from loop
-        case 'd':
-          goal = true;
+          //resetAllEncoders(); 
+          //robotTurn(0); //turn CCW on spot
+          //resetAllEncoders();
+          //delay(15);
+          //robotTurn(0); //turn CCW on spot;
+          //resetAllEncoders();
           break;
           
         default:
           break;           
        }
-  
-       //we have gone straight
-        compassd = compass();
+
+       //break from loop
+       if (drivemode == 'd') {
+          goal = true;
+          break;
+       }
+
+      if (!gyro()) {
+        delay(50);
+        gyro();    
+      }
+
+      //we have gone straight
+      compassd = compass();
+      if (compassd != 0 && firstturn == false) {
+        firstturn = true;
+        if (compassd == 1) {
+          swapdir = true;     //i.e. need to swap east and west; 
+        }
+      }
+
+      compassd = othersp(swapdir, compassd);
+      
       if (compassd == 0) 
       {
         northCount++; 
         i++;
       } else if (compassd == 2){
-        northCount--; //decrease if you went south
-        i--;        
-      } else if (compassd == 1)
-        j++;
-        else if (compassd == 3)
-        j--;
-        
+          northCount--; //decrease if you went south
+          i--;        
+      } else if (compassd == 1) {
+         j--;
+      } else if (compassd == 3) {
+          j++;
+      }
+      
+      Serial.print("Compass = "); Serial.println(compassd);
+      Serial.print("i = "); Serial.print(i); Serial.print(" j = "); Serial.println(j);  
       //returns 1 if wall and 0 if not based on max and min values
       ultrawall = wall(ultrasonicdist(), FRONTMAX, FRONTMIN);
+      Serial.print("Ultrawall = "); Serial.println(ultrawall);
       L1wall = wall(lidarOne.readRangeSingleMillimeters(), SIDEMAX, SIDEMIN);
+      Serial.print("L1wall = "); Serial.println(L1wall);
       L2wall = wall(lidarTwo.readRangeSingleMillimeters(), SIDEMAX, SIDEMIN);
+      Serial.print("L2wall = "); Serial.println(L2wall);
       storemaze(compassd, i, j, L1wall, L2wall, ultrawall);
-  
-  
-    //Check which direction to go next
-    //Lidar/Ultrasonic -> forward, reverse, right or left
      }     
   }
+  //note: can either extract and then send the bytes of data or send all 10x10 and then print limited cols and rows
+  
   if (printonce == 0)
   {
     printMaze(northCount);
     printonce++;
   }
-}               
+}
