@@ -417,19 +417,23 @@ void startphaseb() {
     //if anything is within 50mm, increase count
     //if object is within 50mm for 10 samples - set flag
     //need to test accuracy of measurements
-    if (distance <= 50) {
+    Serial.println(distance);
+    if (distance <= 40) {
       count += 1;
-      if (count == 10) {
+      if (count == 5) {
         seen = true;
+        Serial.println("seen");
       }
     } else if (seen == true) {
       ucount += 1;
-      if (ucount == 10) {
+      Serial.print("unseen");
+      if (ucount == 5) {
         break;
       }
     }
     
   }
+  Serial.println("starting");
   robot_start = true;
 }
 
@@ -719,8 +723,10 @@ void loop()
   statusRed::write(logic_level::high); 
   resetAllEncoders();
 
-  if (!robot_start)
+  if (!robot_start){
+    Serial.println("robot starting phase");
     startphaseb();
+  }
   
   if (robot_start) {
     statusGreen::write(logic_level::high);
@@ -730,9 +736,9 @@ void loop()
   // Using Bluetooth Module (COM31) on TX and RX (Serial Port 0)
   // Manual testing of exploration logic and actuation
   while (!goal) {
-    if (Serial1.available() > 0)   
+    if (Serial.available() > 0)   
     {
-      drivemode = Serial1.read();  
+      drivemode = Serial.read();  
   
       // Physical motion after each decision is made
       // TODO: synthesise actuation with logic autonomously
@@ -775,27 +781,25 @@ void loop()
        }
   
        //we have gone straight
-       if (drivemode == 's') 
-       {
         compassd = compass();
-        if (compassd == 0) 
-        {
-          northCount++; 
-          i++;
-        } else if (compassd == 2){
-          northCount--; //decrease if you went south
-          i--;        
-        } else if (compassd == 1)
-          j++;
-          else if (compassd == 3)
-          j--;
-          
-        //returns 1 if wall and 0 if not based on max and min values
-        ultrawall = wall(ultrasonicdist(), FRONTMAX, FRONTMIN);
-        L1wall = wall(lidarOne.readRangeSingleMillimeters(), SIDEMAX, SIDEMIN);
-        L2wall = wall(lidarTwo.readRangeSingleMillimeters(), SIDEMAX, SIDEMIN);
-        storemaze(compassd, i, j, L1wall, L2wall, ultrawall);
-       }
+      if (compassd == 0) 
+      {
+        northCount++; 
+        i++;
+      } else if (compassd == 2){
+        northCount--; //decrease if you went south
+        i--;        
+      } else if (compassd == 1)
+        j++;
+        else if (compassd == 3)
+        j--;
+        
+      //returns 1 if wall and 0 if not based on max and min values
+      ultrawall = wall(ultrasonicdist(), FRONTMAX, FRONTMIN);
+      L1wall = wall(lidarOne.readRangeSingleMillimeters(), SIDEMAX, SIDEMIN);
+      L2wall = wall(lidarTwo.readRangeSingleMillimeters(), SIDEMAX, SIDEMIN);
+      storemaze(compassd, i, j, L1wall, L2wall, ultrawall);
+  
   
     //Check which direction to go next
     //Lidar/Ultrasonic -> forward, reverse, right or left
