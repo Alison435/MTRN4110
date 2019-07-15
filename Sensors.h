@@ -6,11 +6,16 @@
 
 #include <Wire.h>
 
-#define TRIGGER_PIN 32
-#define ECHO_PIN 33
+#define TRIGGER_PIN 50
+#define ECHO_PIN 51
 #define LIDARONE 30
 #define LIDARTWO 31
 #define INTERRUPT_PIN 18
+
+#define NORTH 0
+#define EAST 1
+#define SOUTH 2
+#define WEST 3
 
 
 float imuAscale = 16384.0;
