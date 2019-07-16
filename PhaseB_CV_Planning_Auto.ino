@@ -8,6 +8,7 @@ Vertical
 10100000011010000001101010010110101001111010001001
 Horizontal
 111111111011111111101000010010100001101011100111111111
+
  */
 
 //////////////////////////////////
@@ -88,6 +89,7 @@ void motorControl(int pin1,int pin2,float percRight,float percLeft)
   }
 }
 
+
 void robotForward(float distance, float setSpeedPerc)
 {
   long targetCount;
@@ -102,10 +104,10 @@ void robotForward(float distance, float setSpeedPerc)
   long prevlCount, prevrCount;
   
   // variable used to offset motor power on right vs left to keep straight.
-  double offset = 0.35;  // offset amount to compensate Right vs. Left drive
+  double offset = 0.14;  // offset amount to compensate Right vs. Left drive
 
   numRev = distance / CIRCUM;  // calculate the target # of rotations
-  targetCount = numRev * COUNT_PER_REV;    // calculate the target count
+  targetCount = numRev * (COUNT_PER_REV);    // calculate the target count
  
   // Reset encoders
   eCountL = 0;
@@ -116,7 +118,7 @@ void robotForward(float distance, float setSpeedPerc)
 
   while (abs(eCountR) < targetCount)
   {
-    motorControl(1,0,rightPWM,leftPWM+0.5);
+    motorControl(1,0,rightPWM,leftPWM);
 
     // calculate the rotation "speed" as a difference in the count from previous cycle.
     lDiff = (abs(eCountL) - prevlCount);
@@ -141,7 +143,7 @@ void robotForward(float distance, float setSpeedPerc)
   }
   
   robotStop();
-  delay(1000);
+  delay(500);
 }
 
 // Functions for motor control and turning
@@ -151,6 +153,7 @@ void robotStop()
 {
   right_motor::stop();
   left_motor::stop();
+  delay(15);
 }
 
 void resetAllEncoders()
@@ -168,11 +171,11 @@ void robotTurn(int directionVal)
   resetEncoderR();
   resetEncoderL();
 
-  if (directionVal == 0)  //Turn to left (CCW)
+  if (directionVal == 1)  //Turn to left (CCW)
   {
     //Right + and Left -
 
-    while (abs(eCountR) <= COUNT_PER_REV/3.10)
+    while (abs(eCountR) <= COUNT_PER_REV/3.50)
     {
       motorControl(0,0,setSpeedPerc,setSpeedPerc);    
     }
@@ -180,7 +183,7 @@ void robotTurn(int directionVal)
     resetEncoderR();
     resetEncoderL();
     robotStop();
-    delay(500);
+    delay(200);
   }
 
   else //directionVal is 1
@@ -188,7 +191,7 @@ void robotTurn(int directionVal)
     //-ve so turn to right (CW)
     //Right - and Left +
 
-    while (abs(eCountR) <= COUNT_PER_REV/3.50)
+    while (abs(eCountR) <= COUNT_PER_REV/3.10)
     {
       motorControl(1,1,setSpeedPerc,setSpeedPerc);  
     }
@@ -196,7 +199,7 @@ void robotTurn(int directionVal)
   resetEncoderR();
   resetEncoderL(); 
   robotStop();    
-  delay(1000); 
+  delay(200); 
   }  
 }
 
@@ -361,9 +364,9 @@ int verticalWalls[ROWS_wall][COLS_wall+1];
                        
 
 //Mouse Stuff  
-int mouseSRow;
-int mouseSColumn;
-int mouseHeading;
+int mouseSRow = 4;
+int mouseSColumn = 2;
+int mouseHeading = 0;
 
 //Store values from flood fill
 int values[ROWS_wall][COLS_wall];
@@ -411,7 +414,7 @@ void setup() {
 
   //Setup Serial
   Serial.begin(9600);
-  Serial1.begin(9600);
+  Serial3.begin(9600);
   
   setupDigitalPins();
   setupMotor(); 
@@ -423,11 +426,11 @@ void setup() {
   
   //GOOD
   //get intial mouse direction
-  Get_Dir();
+  //Get_Dir();
   
   //GOOD
   //get initial starting position
-  Get_Start();
+  //Get_Start();
 
   //GOOD
   //carry out flood fill on maze
@@ -463,12 +466,12 @@ void Get_Maze_Layout(){
   int integerValue = 0;
   //result * 10 + ( num[i] - '0' );
 
-  Serial.println("Please enter all 50 Vertical values for array (top to bottom, left ot right)"); 
+  //Serial.println("Please enter all 50 Vertical values for array (top to bottom, left ot right)"); 
   while (allVertWalls == 0)
   {
-    while (Serial1.available () > 0)
+    while (Serial3.available () > 0)
     {
-      char detectedWallV = Serial1.read();
+      char detectedWallV = Serial3.read();
       integerValue = 0;
       switch (detectedWallV)
       {  
@@ -493,12 +496,12 @@ void Get_Maze_Layout(){
   Serial.println("Vertical DONE");
   delay(15);  
 
-  Serial.println("Please enter all 54 Horizontal values for array (top to bottom, left ot right)");
+  //Serial.println("Please enter all 54 Horizontal values for array (top to bottom, left ot right)");
   while (allHorzWalls == 0)
   {
-    while (Serial1.available () > 0)
+    while (Serial3.available () > 0)
     {
-      char detectedWallH = Serial1.read();
+      char detectedWallH = Serial3.read();
       integerValue = 0;
       switch (detectedWallH)
       {  
@@ -582,6 +585,7 @@ int CurrColCheck = 4;
 int prevRow = 2;
 int prevCol = 4;
 
+Serial3.println("MAZE EXPLORED---PRINTING NOW");
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //FINDING PATH
@@ -710,13 +714,13 @@ while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
                 {
                     if(horizontalWalls[i/2][j/2] == true)
                     {
-                        Serial.print(" -----");
+                        Serial3.print(" -----");
                     } else if(horizontalWalls[i/2][j/2] == 2){
-                         Serial.print(" *****");
+                         Serial3.print(" *****");
                     }
                     else
                     {
-                        Serial.print("      ");
+                        Serial3.print("      ");
                     }
                 }
 
@@ -725,13 +729,13 @@ while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
                 {
                     if(verticalWalls[i/2][j/2] == true)
                     {      
-                            Serial.print("|  ");
+                            Serial3.print("|  ");
                         }else if(verticalWalls[i/2][j/2] == 2){
-                                Serial.print("*  ");
+                                Serial3.print("*  ");
                         }
                         else
                         {
-                            Serial.print("   ");                    
+                            Serial3.print("   ");                    
                     }
             }
 
@@ -741,62 +745,62 @@ while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
                     {
                         if(mouseHeading == NORTH)
                         {
-                            Serial.print("N");
-                            Serial.print("  "); 
+                            Serial3.print("N");
+                            Serial3.print("  "); 
                         }
                         else if(mouseHeading == EAST)
                         {
-                            Serial.print("E");
-                            Serial.print("  ");
+                            Serial3.print("E");
+                            Serial3.print("  ");
                         }
                         else if(mouseHeading == SOUTH)
                         {
-                            Serial.print("S");
-                            Serial.print("  ");
+                            Serial3.print("S");
+                            Serial3.print("  ");
                         }
                         else if(mouseHeading == WEST)
                         {
-                            Serial.print("W");
-                            Serial.print("  ");
+                            Serial3.print("W");
+                            Serial3.print("  ");
                         }
                     }
                     else
                     {
                         if((i-1)/2 == goalRow && (j-1)/2 == goalCol){
                             if(path[(i-1)/2][(j-1)/2] < 10){
-                                Serial.print("X");
-                                Serial.print("  "); 
+                                Serial3.print("X");
+                                Serial3.print("  "); 
                             } else {
-                                Serial.print("X");
-                                Serial.print("  ");                                  
+                                Serial3.print("X");
+                                Serial3.print("  ");                                  
                             }                                                        
                         } else {
                             if (path[(i-1)/2][(j-1)/2] != 0)
                             {
                                 //print path values
                                 if(path[(i-1)/2][(j-1)/2] < 10){
-                                    Serial.print(path[(i-1)/2][(j-1)/2]);
-                                    Serial.print("  "); 
+                                    Serial3.print(path[(i-1)/2][(j-1)/2]);
+                                    Serial3.print("  "); 
                                 } else {
-                                    Serial.print(path[(i-1)/2][(j-1)/2]);
-                                    Serial.print(" ");                                  
+                                    Serial3.print(path[(i-1)/2][(j-1)/2]);
+                                    Serial3.print(" ");                                  
                                 }                                             
                             } else {
                                   if(path[((i-1)/2)][((j-1)/2)] < 10){
-                                      Serial.print(" ");
-                                      Serial.print("  ");                                  
+                                      Serial3.print(" ");
+                                      Serial3.print("  ");                                  
                                   } else {
-                                      Serial.print("  ");
-                                      Serial.print(" ");                                  
+                                      Serial3.print("  ");
+                                      Serial3.print(" ");                                  
                                   }                                     
                             }                          
                         }
                     }
                 }                                                                                                
             }
-             Serial.print("\n");           
+             Serial3.print("\n");           
         }
-        Serial.print("\n");       
+        Serial3.print("\n");       
     }
     
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -811,10 +815,10 @@ void Get_Dir(){
   int direction;
   h=0;
   while(h<1){
-      if (Serial1.available() > 0) {   // something came across serial
+      if (Serial3.available() > 0) {   // something came across serial
         integerValue = 0;         // throw away previous integerValue
         while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial1.read();
+          incomingByte = Serial3.read();
           if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
           if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
           if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
@@ -845,10 +849,10 @@ void Get_Start(){
   Serial.print("Please enter start row position of mouse\n");
   h=0;
   while(h<1){
-      if (Serial1.available() > 0) {   // something came across serial
+      if (Serial3.available() > 0) {   // something came across serial
         integerValue = 0;         // throw away previous integerValue
         while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial1.read();
+          incomingByte = Serial3.read();
           if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
           if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
           if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
@@ -865,10 +869,10 @@ void Get_Start(){
   Serial.print("Please enter start column position of mouse\n");
   h=0;
   while(h<1){
-      if (Serial1.available() > 0) {   // something came across serial
+      if (Serial3.available() > 0) {   // something came across serial
         integerValue = 0;         // throw away previous integerValue
         while(1) {            // force into a loop until 'n' is received
-          incomingByte = Serial1.read();
+          incomingByte = Serial3.read();
           if (incomingByte == '\n') break;   // exit the while(1), we're done receiving
           if (incomingByte == '\r') break;   // exit the while(1), we're done receiving
           if (incomingByte == -1) continue;  // if no characters are in the buffer read() returns -1
@@ -955,12 +959,12 @@ void flood_fill(){
 
  for(int row = 0;row < ROWS_wall; row++){
     for(int col = 0; col < COLS_wall; col++){
-         Serial.print(values[row][col]);
+         Serial3.print(values[row][col]);
     }
  } 
 
 //Print CurrentExploredValue at end
-    Serial.print("\n");
+    Serial3.print("\n");
 //  Serial.print( CurrentExploredValue);
 //  Serial.print("\n");
 
@@ -993,8 +997,8 @@ void loop()
 //    }
 // }
 
-Serial.println("");
-Serial.println("COMMANDS FOR ROBOT MOVEMENT:");
+Serial3.println("");
+Serial3.println("COMMANDS FOR ROBOT MOVEMENT:");
 
      for (int k = Max_Value_Goal; k >= 0; k--)
      {      
@@ -1087,7 +1091,7 @@ Serial.println("COMMANDS FOR ROBOT MOVEMENT:");
      
   // Interpret commands/direction sequence (for Robot actuation)  
   
-  Serial.println("--COMMANDS READY--");
+  Serial3.println("--COMMANDS READY--");
           
   // Iterate through command Array
   for (int i = 0; i < MAX_INPUT; i++)
