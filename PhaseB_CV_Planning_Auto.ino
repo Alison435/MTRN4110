@@ -104,7 +104,7 @@ void robotForward(float distance, float setSpeedPerc)
   long prevlCount, prevrCount;
   
   // variable used to offset motor power on right vs left to keep straight.
-  double offset = 0.14;  // offset amount to compensate Right vs. Left drive
+  double offset = 0.15;  // offset amount to compensate Right vs. Left drive
 
   numRev = distance / CIRCUM;  // calculate the target # of rotations
   targetCount = numRev * (COUNT_PER_REV);    // calculate the target count
@@ -139,12 +139,14 @@ void robotForward(float distance, float setSpeedPerc)
     {
       leftPWM += offset;  
       rightPWM -= offset;    }
-    delay(50);  // short delay to give motors a chance to respond.
+    delay(75);  // short delay to give motors a chance to respond.
   }
   
+  delay(15);
   robotStop();
-  delay(500);
+  resetAllEncoders();
 }
+
 
 // Functions for motor control and turning
 // Implementing Proportional Controller for differential drive system
