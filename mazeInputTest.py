@@ -5,7 +5,7 @@
 import serial
 import time
 
-COM_MOUSE = "COM31" #change this to match your COM port (bluetooth port)
+COM_MOUSE = "COM31" #change this to match your COM port (bluetooth port). 31 for Bluetooth
 
 def main():
 
@@ -23,6 +23,9 @@ def main():
     ser.write("111111111011111111101000010010100001101011100111111111\n")
     #print ser.readline() # Read the newest output from the Arduino
     print("Sent horizontal array\n")
+
+    while (True):
+        print(ser.readline())
 
 #----------Execute MAIN Here-----------
 
