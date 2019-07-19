@@ -1,6 +1,6 @@
 %% Code to be used for Vision Parts 1-4
 % Uses color threshold to locate bot
-close all; clear all;
+close all; clear all; warning off;
 
 % maze_image = webcam('Logitech BRIO');
 % % maze_image = webcam('USB2.0 HD UVC WebCam');
@@ -129,35 +129,35 @@ rectangle('position',[7 7 1850 1027],'EdgeColor','red','LineWidth',3);
 figure, imshow(mazeCapture),title('Robot Location'); 
 bot=viscircles(botCentre,80,'Color','c');
 if (botCentre(1)< 203)
-    col = 1;
+    col = 0;
 elseif (botCentre(1)>203 && botCentre(1)<409)
-    col = 2;
+    col = 1;
 elseif (botCentre(1)>409 && botCentre(1)<613) 
-    col = 3;
+    col = 2;
 elseif (botCentre(1)>613 && botCentre(1)<826)
-    col = 4;
+    col = 3;
 elseif (botCentre(1)>826 && botCentre(1) < 1031)
-    col = 5;
+    col = 4;
 elseif (botCentre(1)>1031 && botCentre(1) < 1246)
-    col = 6;
+    col = 5;
 elseif (botCentre(1)>1246 && botCentre(1) < 1438)
-    col = 7;
+    col = 6;
 elseif (botCentre(1)>1438 && botCentre(1) < 1662)
-    col = 8;
+    col = 7;
 else
-    col = 9;
+    col = 8;
 end
 
 if (botCentre(2)< 207)
-    row = 1;
+    row = 0;
 elseif (botCentre(2)>207 && botCentre(2)<412)
-    row = 2;
+    row = 1;
 elseif (botCentre(2)>412 && botCentre(2)<620) 
-    row = 3;
+    row = 2;
 elseif (botCentre(2)>620 && botCentre(2)<835)
-    row = 4;
+    row = 3;
 else
-    row = 5;
+    row = 4;
 end
 robotPos = ['Robot is in Row ',num2str(row),' and Column ', num2str(col)];
 disp(robotPos)
@@ -200,7 +200,7 @@ horSegment=170;
 vertSegment=175;
 XrowPixel=[23;225;437;639;850;1057;1263;1477;1683;1869];
 YrowPixel=[11;212;418;625;829;1029];
-XcolPixel= [3; 199; 411; 617; 825; 1031; 1233; 1445; 1653; 1853];
+XcolPixel= [3; 199; 413; 617; 827; 1031; 1233; 1445; 1653; 1853];
 YcolPixel= [37; 239; 447; 655; 861];
 
 %Vertical array
@@ -233,92 +233,105 @@ for j=2:5
             horizontalArray(j,i)=0;
         end
     end
-end    
-VertString=mat2str(verticalArray(:)');
+end 
+newLine='\n';
+VertString=mat2str(verticalArray);
 VertString(strfind(VertString, ' ')) = [];
 VertString(strfind(VertString, '[')) = [];
 VertString(strfind(VertString, ']')) = [];
-newLine='\n';
-VertString=append(VertString,newLine)
-HoriString=mat2str(horizontalArray(:)');
+VertString(strfind(VertString, ';')) = [];
+VertString=append(VertString,newLine);
+
+HoriString=mat2str(horizontalArray);
 HoriString(strfind(HoriString, ' ')) = [];
 HoriString(strfind(HoriString, '[')) = [];
 HoriString(strfind(HoriString, ']')) = [];
-HoriString=append(HoriString,newLine)
+HoriString(strfind(HoriString, ';')) = [];
+HoriString=append(HoriString,newLine);
 
 %% serial print output for arduino
 % This section will serial write the location/heading/maze layout to
 % arduino
 
-% %serial.write;
-% s=serial('COM4','BAUD',9600);
-% fopen(s)
-% % fprintf(s,'%c\n',direction);
-% fwrite(s,char(direction));
-% % idn=fscanf(s);
-% fclose(s)
-% 
-% board = arduino();
-% led = 'D13';
-% while(1)
-%     switch direction
-%         case '0\n'
-%             disp('North Heading');    
-%             writeDigitalPin(board,led,1);    
-%             pause(1);
-%             writeDigitalPin(board,led,0);     
-%             pause(1);
-%             writeDigitalPin(board,led,1);    
-%             pause(1);
-%             writeDigitalPin(board,led,0);     
-%             pause(1);
-%         case '1\n'
-%             disp('East Heading');    
-%             writeDigitalPin(board,led,1);    
-%             pause(2);
-%             writeDigitalPin(board,led,0);     
-%             pause(2);
-%             writeDigitalPin(board,led,1);    
-%             pause(2);
-%             writeDigitalPin(board,led,0);     
-%             pause(2);
-%         case '2\n'
-%             disp('North Heading');    
-%             writeDigitalPin(board,led,1);    
-%             pause(3);
-%             writeDigitalPin(board,led,0);     
-%             pause(3);
-%             writeDigitalPin(board,led,1);    
-%             pause(3);
-%             writeDigitalPin(board,led,0);     
-%             pause(3);
-%         case '3\n'
-%             disp('East Heading');    
-%             writeDigitalPin(board,led,1);    
-%             pause(4);
-%             writeDigitalPin(board,led,0);     
-%             pause(4);
-%             writeDigitalPin(board,led,1);    
-%             pause(4);
-%             writeDigitalPin(board,led,0);     
-%             pause(4);
-%     end
-% end
-% disp('close Arduino board');
-% clear board;
+if ~isempty(instrfind)
+    fclose(instrfind);
+    delete (instrfind);
+end
+
+x=serial('COM4','BAUD', 9600,'Timeout', 5,'Terminator','LF');
+fopen(x);
+
+% Vertical Walls
+% direction1=fscanf(x,'%s');
+% disp(direction1) %Please enter all 50 Vertical values for array (top to bottom, left ot right)
+disp('Sending vert'); 
+pause(5);
+fprintf(x,VertString);  
+direction2=fscanf(x,'%s');
+disp(direction2)%Vertical DONE
+pause(5);
+
+% Horizontal Walls
+% direction3=fscanf(x,'%s');
+% disp(direction3) %Please enter all 54 Horizontal values for array (top to bottom, left ot right)
+disp('Sending hori');  
+pause(5);
+fprintf(x,HoriString);  
+direction4=fscanf(x,'%s');
+disp(direction4)%Horizontal DONE
+pause(5);
+
+% Direction
+disp('Sending Direction');    
+pause(5);
+fprintf(x,direction);  
+direction5=fscanf(x,'%s');
+disp(direction5)% Direction DONE
+pause(5);
+
+% Row
+disp('Sending row'); 
+pause(5);
+fprintf(x,row);
+direction6=fscanf(x,'%s');
+disp(direction6)%StartRow DONE
+pause(5);
+
+%Column
+disp('Sending column'); 
+pause(5);
+fprintf(x,col); 
+direction7=fscanf(x,'%s');
+disp(direction7)%StartCol DONE
+pause(5);
+
+% direction8=fscanf(x,'%s'); %reads back in maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+disp(fscanf(x,'%s')) %displays maze layout
+fclose(x);
+delete(x);
 
 %%
-function poleRemove(centre, radii, image)
-kernel=zeros(10,10);
-    for i=1:numel(radii)
-        for j=1:10
-        image(round(centre(i,1)-j),round(centre(i,2)-j))=false;
-        image(round(centre(i,1)+j),round(centre(i,2)-j))=false;
-        image(round(centre(i,1)-j),round(centre(i,2)+j))=false;
-        image(round(centre(i,1)+j),round(centre(i,2)+j))=false;
-        end
-    end
-end
+% function poleRemove(centre, radii, image)
+% kernel=zeros(10,10);
+%     for i=1:numel(radii)
+%         for j=1:10
+%         image(round(centre(i,1)-j),round(centre(i,2)-j))=false;
+%         image(round(centre(i,1)+j),round(centre(i,2)-j))=false;
+%         image(round(centre(i,1)-j),round(centre(i,2)+j))=false;
+%         image(round(centre(i,1)+j),round(centre(i,2)+j))=false;
+%         end
+%     end
+% end
 
 function direction = heading(FrontCentre,BackCentre)
     
