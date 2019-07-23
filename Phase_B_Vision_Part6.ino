@@ -33,15 +33,66 @@ Horizontal
 #include <hardware.h>
 #include <hardware_definition.h>
 #include <Wire.h>
+#include <Sensors.h>
 
 // Avoids prepending scope operator to all functions
 using namespace hardware;
 
 // Motor/Wheel parameters
-#define COUNT_PER_REV       1500.0  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV       1850.0  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV_TURN  1450.0  // 16 CPR * 120:1 gear ratio
+
 #define CIRCUM              240.0 // mm
 #define CELL_LENGTH         250.0 // mm
-#define STRAIGHT_DISTANCE   200.0
+#define STRAIGHT_DISTANCE   200.0 // mm
+#define LIDAR_MAX_SETPOINT  100.0 // mm
+#define STRAIGHT_SPEED      25.0
+
+// Isolated Test Defines (toggle ON.OFF) -> For Phase B
+#define TEST_MOVE_CENTRES
+#define TEST_SPOT_TURN
+#define TEST_STRAIGHT
+#define TEST_SQUARE_WAVE
+#define TEST_AUTO
+
+bool using_lidar = false;
+
+void setUpLidars()
+{
+  Wire.begin();
+  pinMode(LIDARONE,OUTPUT);
+  pinMode(LIDARTWO,OUTPUT);
+  digitalWrite(LIDARTWO, HIGH);//enable lidar two
+  digitalWrite(LIDARONE, LOW); //shut down lidar one before chaning address
+  delay(100);
+  lidarTwo.setAddress(0x30);
+  delay(10);
+  digitalWrite(LIDARONE, HIGH);//enable lidar one 
+  
+  lidarTwo.init();
+  Serial.println("Lidar Two initialised");
+  lidarTwo.configureDefault();
+  lidarTwo.setTimeout(500);
+  
+  lidarOne.init();              //lidar one uses default address
+  Serial.println("Lidar One initialised");
+  lidarOne.configureDefault();
+  lidarOne.setTimeout(500);
+
+}
+
+// Control Parameters
+double error_P_lidar = 0.0;
+double error_P_encoder = 0.0;
+
+double error_D_lidar = 0.0;
+double error_D_encoder = 0.0;
+
+double prev_error_encoder = 0.0;
+double prev_error_lidar = 0.0;
+
+double totalError = 0.0;
+double sumError = 0.0;
 
 // Encoder variables for Phase A
 volatile int eCountR = 0; 
@@ -87,13 +138,16 @@ void motorControl(int pin1,int pin2,float percRight,float percLeft)
   }
 }
 
+//-------------------PID Parameters---------------------//
+// Constants for Lidar
+double K_p_lidar = 0.03;
+double K_d_lidar = 0.00;
 
-void resetAllEncoders()
-{
-  eCountL = 0;
-  eCountR = 0;
-  delay(10);
-}
+// Constants for Encoder
+double K_p_encoder = 0.03;
+double K_d_encoder = 0.03;
+double K_i_encoder = 0.012;
+//------------------------------------------------------//
 
 void robotForward(float distance, float setSpeedPerc)
 {
@@ -105,11 +159,10 @@ void robotForward(float distance, float setSpeedPerc)
   float leftPWM = setSpeedPerc;
   float rightPWM = setSpeedPerc;
 
-  // variables for tracking the left and right encoder counts
-  long prevlCount, prevrCount;
-  
-  // variable used to offset motor power on right vs left to keep straight.
-  double offset = 0.15;  // offset amount to compensate Right vs. Left drive
+  float prevlCount, prevrCount;
+ 
+  // Bias - variable used to offset motor power on right vs left to keep straight.
+  double offset = 0.12;  // offset amount to compensate Right vs. Left drive
 
   numRev = distance / CIRCUM;  // calculate the target # of rotations
   targetCount = numRev * (COUNT_PER_REV);    // calculate the target count
@@ -117,43 +170,81 @@ void robotForward(float distance, float setSpeedPerc)
   // Reset encoders
   eCountL = 0;
   eCountR = 0;
-  delay(50);
+  delay(15);
 
   motorControl(1,0,rightPWM,leftPWM);
 
-  while (abs(eCountR) < targetCount)
+  while (abs(eCountL) < targetCount)
   {
-    motorControl(1,0,rightPWM,leftPWM+0.13);
+    motorControl(1,0,rightPWM,leftPWM);
 
-    // calculate the rotation "speed" as a difference in the count from previous cycle.
-    lDiff = (abs(eCountL) - prevlCount);
-    rDiff = (abs(eCountR) - prevrCount);
+    // Error count from encoder 'ticks'
+    lDiff = (abs(eCountL) - prevlCount)/2;
+    rDiff = (abs(eCountR) - prevrCount)/2;
 
-    // store the current count as the "previous" count for the next cycle.
-    prevlCount = -eCountL;
-    prevrCount = -eCountR;
-
-    // if left is faster than the right, slow down the left / speed up right
-    if (lDiff > rDiff) 
+    // Have walls on either side (Part 3 of Phase B)
+    // L1 = 65. L2 = 45. Bias = 15
+    if (using_lidar == true)
     {
-      leftPWM -= offset;
-      rightPWM += offset;
-    }
-    // if right is faster than the left, speed up the left / slow down right
-    else if (lDiff < rDiff) 
-    {
-      leftPWM += offset;  
-      rightPWM -= offset;    }
-    delay(75);  // short delay to give motors a chance to respond.
-  }
+        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 15.0);
+        error_D_lidar = error_P_lidar - prev_error_lidar;
   
-  delay(15);
+        //K_p and K_d (for lidar)  
+        totalError = (K_p_lidar * error_P_lidar) + (K_d_lidar * error_D_lidar);
+        prev_error_lidar = error_P_lidar;
+  
+        if (lidarOne.readRangeSingleMillimeters() > lidarTwo.readRangeSingleMillimeters())
+        {
+          leftPWM -= 2.0;
+          rightPWM += 2.0;
+
+          if (leftPWM > setSpeedPerc || rightPWM > setSpeedPerc)
+          {
+            leftPWM = setSpeedPerc;
+            rightPWM = setSpeedPerc; 
+          }
+        }
+        else if (lidarOne.readRangeSingleMillimeters() < lidarTwo.readRangeSingleMillimeters())
+        {
+          leftPWM += 2.0;
+          rightPWM -= 2.0;
+
+          if (leftPWM >= setSpeedPerc || rightPWM >= setSpeedPerc)
+          {
+            leftPWM = setSpeedPerc;
+            rightPWM = setSpeedPerc; 
+          }
+        }     
+     }
+    // If no wall on either side
+    else
+    {
+      double e_error = (lDiff - rDiff); //encoder error between left and right wheel
+      sumError += e_error;      
+      double dError = (lDiff - rDiff) - prev_error_encoder;
+
+      totalError = (K_p_encoder * e_error) - (K_d_encoder * setSpeedPerc) + 
+      (K_i_encoder * sumError);
+
+      leftPWM += totalError/3;  
+      rightPWM -= totalError/3;
+
+      if (leftPWM >= setSpeedPerc || rightPWM >= setSpeedPerc)
+      {
+        leftPWM = setSpeedPerc;
+        rightPWM = setSpeedPerc; 
+      }
+
+      prev_error_lidar = e_error; //store previous error for next cycle-        
+      // Store previous count  
+      prevlCount = abs(eCountL);
+      prevrCount = abs(eCountR);
+    }
+  }
   robotStop();
+  delay(10);
   resetAllEncoders();
 }
-
-// Functions for motor control and turning
-// Implementing Proportional Controller for differential drive system
 
 void robotStop()
 {
@@ -165,7 +256,7 @@ void robotStop()
 void robotTurn(int directionVal)
 {
 
-  float setSpeedPerc = 20.0;
+  float setSpeedPerc = 30.0;
 
   resetEncoderR();
   resetEncoderL();
@@ -174,7 +265,7 @@ void robotTurn(int directionVal)
   {
     //Right + and Left -
 
-    while (abs(eCountR) <= COUNT_PER_REV/3.52)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.48)
     {
       motorControl(0,0,setSpeedPerc,setSpeedPerc);    
     }
@@ -190,7 +281,7 @@ void robotTurn(int directionVal)
     //-ve so turn to right (CW)
     //Right - and Left +
 
-    while (abs(eCountR) <= COUNT_PER_REV/3.14)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.05)
     {
       motorControl(1,1,setSpeedPerc,setSpeedPerc);  
     }
@@ -262,6 +353,13 @@ void resetEncoderR()
 void resetEncoderL()
 {
   eCountL = 0;
+}
+
+void resetAllEncoders()
+{
+  eCountL = 0;
+  eCountR = 0;
+  delay(10);
 }
 
 void setupDigitalPins()
