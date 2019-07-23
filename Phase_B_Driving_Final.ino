@@ -6,15 +6,18 @@
 #include <units.h>
 #include <hardware.h>
 #include <hardware_definition.h>
+#include <Wire.h>
+#include <Sensors.h>
 
 // Avoids prepending scope operator to all functions
 using namespace hardware;
 
 // Motor/Wheel parameters
-#define COUNT_PER_REV       1500.0  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV       1400.0  // 16 CPR * 120:1 gear ratio
 #define CIRCUM              240.0 // mm
 #define CELL_LENGTH         250.0 // mm
-#define STRAIGHT_DISTANCE   200.0
+#define STRAIGHT_DISTANCE   200.0 // mm
+#define LIDAR_MAX_SETPOINT  100.0 // mm
 
 // Isolated Test Defines (toggle ON.OFF) -> For Phase B
 #define TEST_MOVE_CENTRES
@@ -30,10 +33,44 @@ typedef enum robot_motion
   ROBOT_RIGHT,  
 } ROBOT_MOVE;
 
-bool robot_start = false; //will be set to true once LED sequence is finished
-int movement_num = 0;
+bool using_lidar = false;
 
-//move_ref = &robotMovements[movement_num]
+void setUpLidars()
+{
+  Wire.begin();
+  pinMode(LIDARONE,OUTPUT);
+  pinMode(LIDARTWO,OUTPUT);
+  digitalWrite(LIDARTWO, HIGH);//enable lidar two
+  digitalWrite(LIDARONE, LOW); //shut down lidar one before chaning address
+  delay(100);
+  lidarTwo.setAddress(0x30);
+  delay(10);
+  digitalWrite(LIDARONE, HIGH);//enable lidar one 
+  
+  lidarTwo.init();
+  Serial.println("Lidar Two initialised");
+  lidarTwo.configureDefault();
+  lidarTwo.setTimeout(500);
+  
+  lidarOne.init();              //lidar one uses default address
+  Serial.println("Lidar One initialised");
+  lidarOne.configureDefault();
+  lidarOne.setTimeout(500);
+
+}
+
+// Control Parameters
+double error_P_lidar = 0.0;
+double error_P_encoder = 0.0;
+
+double error_D_lidar = 0.0;
+double error_D_encoder = 0.0;
+
+double prev_error_encoder = 0.0;
+double prev_error_lidar = 0.0;
+
+double totalError = 0.0;
+double sumError = 0.0;
 
 // Encoder variables for Phase A
 volatile int eCountR = 0; 
@@ -79,6 +116,17 @@ void motorControl(int pin1,int pin2,float percRight,float percLeft)
   }
 }
 
+//-------------------PID Parameters---------------------//
+// Constants for Lidar
+double K_p_lidar = 0.15;
+double K_d_lidar = 0.05;
+
+// Constants for Encoder
+double K_p_encoder = 0.5;
+double K_d_encoder = 0.1;
+double K_i_encoder = 0.2;
+//------------------------------------------------------//
+
 void robotForward(float distance, float setSpeedPerc)
 {
   long targetCount;
@@ -89,11 +137,10 @@ void robotForward(float distance, float setSpeedPerc)
   float leftPWM = setSpeedPerc;
   float rightPWM = setSpeedPerc;
 
-  // variables for tracking the left and right encoder counts
-  long prevlCount, prevrCount;
-  
-  // variable used to offset motor power on right vs left to keep straight.
-  double offset = 0.15;  // offset amount to compensate Right vs. Left drive
+  float prevlCount, prevrCount;
+ 
+  // Bias - variable used to offset motor power on right vs left to keep straight.
+  double offset = 0.12;  // offset amount to compensate Right vs. Left drive
 
   numRev = distance / CIRCUM;  // calculate the target # of rotations
   targetCount = numRev * (COUNT_PER_REV);    // calculate the target count
@@ -101,43 +148,59 @@ void robotForward(float distance, float setSpeedPerc)
   // Reset encoders
   eCountL = 0;
   eCountR = 0;
-  delay(50);
+  delay(15);
 
   motorControl(1,0,rightPWM,leftPWM);
 
   while (abs(eCountR) < targetCount)
   {
-    motorControl(1,0,rightPWM,leftPWM+0.13);
+    motorControl(1,0,rightPWM,leftPWM + offset);
 
-    // calculate the rotation "speed" as a difference in the count from previous cycle.
+    // Error count from encoder 'ticks'
     lDiff = (abs(eCountL) - prevlCount);
     rDiff = (abs(eCountR) - prevrCount);
-
-    // store the current count as the "previous" count for the next cycle.
+  
+    // Store previous count  
     prevlCount = -eCountL;
     prevrCount = -eCountR;
 
-    // if left is faster than the right, slow down the left / speed up right
-    if (lDiff > rDiff) 
+    // Have walls on either side (Part 3 of Phase B)
+    // L1 = 65. L2 = 45. Bias = 15
+    if (using_lidar == true)
     {
-      leftPWM -= offset;
-      rightPWM += offset;
-    }
-    // if right is faster than the left, speed up the left / slow down right
-    else if (lDiff < rDiff) 
-    {
-      leftPWM += offset;  
-      rightPWM -= offset;    }
-    delay(75);  // short delay to give motors a chance to respond.
-  }
+     if (lidarTwo.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT && lidarOne.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT) //10-110
+      {
+        error_P_lidar = lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 15.0;
+        error_D_lidar = error_P_lidar - prev_error_lidar;
   
-  delay(15);
+        //K_p and K_d (for lidar)  
+        totalError = (K_p_lidar * error_P_lidar) + (K_d_lidar * error_D_lidar);
+        prev_error_lidar = error_P_lidar;
+  
+        leftPWM -= totalError;
+        rightPWM += totalError;    
+      }     
+    }
+    // If no wall on either side
+    else
+    {
+      double e_error = (lDiff - rDiff); //encoder error between left and right wheel
+      sumError += e_error;      
+      double dError = (lDiff - rDiff) - prev_error_encoder;
+
+      totalError = (K_p_encoder * e_error) + (K_d_encoder * dError) + 
+      (K_i_encoder * sumError);
+
+      leftPWM += totalError;  
+      rightPWM -= totalError;
+
+      prev_error_lidar = e_error; //store previous error for next cycle
+    }
+  }
   robotStop();
+  delay(10);
   resetAllEncoders();
 }
-
-// Functions for motor control and turning
-// Implementing Proportional Controller for differential drive system
 
 void robotStop()
 {
@@ -149,7 +212,7 @@ void robotStop()
 void robotTurn(int directionVal)
 {
 
-  float setSpeedPerc = 30.0;
+  float setSpeedPerc = 25.0;
 
   resetEncoderR();
   resetEncoderL();
@@ -158,7 +221,7 @@ void robotTurn(int directionVal)
   {
     //Right + and Left -
 
-    while (abs(eCountR) <= COUNT_PER_REV/3.52)
+    while (abs(eCountR) <= COUNT_PER_REV/3.50)
     {
       motorControl(0,0,setSpeedPerc,setSpeedPerc);    
     }
@@ -174,7 +237,7 @@ void robotTurn(int directionVal)
     //-ve so turn to right (CW)
     //Right - and Left +
 
-    while (abs(eCountR) <= COUNT_PER_REV/3.14)
+    while (abs(eCountR) <= COUNT_PER_REV/3.12)
     {
       motorControl(1,1,setSpeedPerc,setSpeedPerc);  
     }
@@ -293,11 +356,12 @@ logic_level ledLogic = logic_level::low;  // LED logic level set LOW as default 
 char drivemode;
 
 void setup() {
-
+  
   Serial3.begin(9600);  
   setupDigitalPins();
   setupMotor(); 
   setupEncoderWheel(); 
+  setUpLidars();
   pinMode(13,OUTPUT); 
   delay(100);
 }
@@ -317,25 +381,29 @@ void loop()
     {
           
       case '1':
-        startLEDSequence();     
+        startLEDSequence(); 
+        using_lidar = false;
         resetAllEncoders();   
         mode_centres();
         break;
 
       case '2':
         startLEDSequence(); 
+        using_lidar = false;
         resetAllEncoders();   
         mode_spot_turn();
         break;
             
       case '3':
         startLEDSequence();
+        using_lidar = true;
         resetAllEncoders();      
         mode_straight();
         break;
             
       case '4':
         startLEDSequence();
+        using_lidar = false;
         resetAllEncoders();   
         mode_square_wave();
         break;
@@ -343,7 +411,7 @@ void loop()
       default:
         break;           
      }
-   }     
+   }  
 }        
 
 void mode_centres()
@@ -354,7 +422,7 @@ void mode_centres()
   #ifdef TEST_MOVE_CENTRES
     resetAllEncoders();
     delay(15);
-    robotForward(STRAIGHT_DISTANCE,30.0);
+    robotForward(STRAIGHT_DISTANCE,20.0);
     resetAllEncoders();   
     statusGreen::write(logic_level::low);
     statusRed::write(logic_level::high);   
@@ -400,7 +468,7 @@ void mode_spot_turn()
                 newCounter = 1;
                 break;                
               }
-              rotArray [counter] = 0;  // terminating null byte                                     
+              rotArray [counter] = 0;  // terminating null byte                              
               input_complete = 1;
               break;
                 
@@ -450,14 +518,16 @@ void mode_straight()
   //(including the starting cell) without hitting the walls. (
       
   Serial.println("STRAIGHT");
-  delay(50);
-  int j = 0;
-  for (j = 0; j < 6; j++)
+
+  for (int j = 0; j < 6; j++)
   {
     resetAllEncoders();
-    robotForward(STRAIGHT_DISTANCE,30.0);
+    robotForward(STRAIGHT_DISTANCE,25.0);
+    robotStop();
+    resetAllEncoders();
+    delay(15);
   }
-          
+           
   statusGreen::write(logic_level::low);
   statusRed::write(logic_level::high); 
   delay(1000);  
@@ -473,55 +543,55 @@ void mode_square_wave()
 
   //slslsrsrslslsrsrs
 
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
   resetAllEncoders();
   robotTurn(0);
   delay(25);
   resetAllEncoders();
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
   resetAllEncoders();
   robotTurn(0);
   delay(25);
   resetAllEncoders();
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
   resetAllEncoders();
   robotTurn(1);
   delay(25);
   resetAllEncoders();
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
   resetAllEncoders();
   robotTurn(1);
   delay(25);
   resetAllEncoders();
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
   resetAllEncoders();
   robotTurn(0);
   delay(25);
   resetAllEncoders();
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
   resetAllEncoders();
   robotTurn(0);  
   delay(25);
   resetAllEncoders();
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
   resetAllEncoders();
   robotTurn(1);
   delay(25);
   resetAllEncoders();
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
   resetAllEncoders();
   robotTurn(1);
   delay(25);
   resetAllEncoders();
-  robotForward(STRAIGHT_DISTANCE,30.0);
+  robotForward(STRAIGHT_DISTANCE,20.0);
   delay(25);
             
   statusGreen::write(logic_level::low);
