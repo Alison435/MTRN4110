@@ -2,7 +2,8 @@
 
 // Combining Driving and Exploration 
 // TODO: calibrate encoder for right turns - might need to increase
-//check about numbering for lcd
+//encoder counts were changed for right turns
+//
 
 // Including API Libraries
 #include <units.h>
@@ -23,6 +24,7 @@ using namespace hardware;
 
 // Motor/Wheel parameters
 #define COUNT_PER_REV       1660.0  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV_RIGHT 1500  //lowered for right turns
 #define CIRCUM              240.0 // mm
 #define CELL_LENGTH         250.0 // mm
 #define STRAIGHT_DISTANCE   200.0
@@ -44,8 +46,8 @@ int tempMap[10][10];  //temp map to transfer map details
 int prows;
 int pcols;
 int pheading;
-//int rows_wall;
-//int cols_wall;
+int pgoalx;
+int pgoaly;
 
 //global cases for flood fill map
 int values[9][9];
@@ -296,8 +298,8 @@ void robotTurn(int directionVal)
   {
     //-ve so turn to right (CW)
     //Right - and Left +
-
-    while (abs(eCountR) <= COUNT_PER_REV/3.14)
+    //changing encoder count for right turns
+    while (abs(eCountR) <= COUNT_PER_REV_RIGHT/3.14)
     {
       //motorControl(1,1,setSpeedPerc,setSpeedPerc);  
     }
@@ -628,7 +630,7 @@ void readAndstore(short i, short j, short compassd, bool swapdir) {
   distance = distance/5;
   
   bool ultrawall = wall(distance, FRONTMAX, FRONTMIN);
-  //Serial3.print("Ultrawall = "); Serial3.println(ultrawall);
+  Serial3.print("Ultrawall = "); Serial3.println(ultrawall);
 
   distance = 0;   //reset distance
   for (int temp = 0; temp !=5; temp++) {
@@ -746,7 +748,7 @@ short findnextdir(short &i, short &j, short &oldi, short &oldj, int rows_wall, i
 
 
 //prints Hmaze and Vmaze combined
-void printMaze(short initialheading, int rows_wall, int cols_wall) {
+void printMaze(short initialheading, int rows_wall, int cols_wall, int goalx, int goaly) {
   for(int i = 0;i < 2*(rows_wall)+1; i++) {
     for(int j = 0;j < 2*(cols_wall)+1 ;j++) {
         //Add Horizontal Walls
@@ -771,6 +773,11 @@ void printMaze(short initialheading, int rows_wall, int cols_wall) {
                 Serial3.print("| S ");
               else
                 Serial3.print("| S ");
+            } else if (i == (goalx*2 +1) && j == (goaly*2)) {
+              if (Vmap[i/2][j/2] == true) 
+                Serial3.print("| X ");
+              if (Vmap[i/2][j/2] == false)
+                Serial3.print("  X ");  
             } else if(Vmap[i/2][j/2] == true)
               Serial3.print("|   ");
             else if (Vmap[i/2][j/2] == false)
@@ -966,6 +973,8 @@ void loop()
         pcols = cols_wall;
         goalx = 2;
         goaly = 4;
+        pgoalx = goalx;
+        pgoaly = goaly;
 
         while(!goal) {
           
@@ -1027,6 +1036,8 @@ void loop()
         pcols = cols_wall;
         goalx = 4;
         goaly = 2;  
+        pgoalx = goalx;
+        pgoaly = goaly;
 
         while(!goal) {
 
@@ -1095,7 +1106,7 @@ void loop()
       lcd.clear();
       lcd.print("   DONE");
       Serial3.println("printing");
-      printMaze(initialheading, prows, pcols);
+      printMaze(pheading, prows, pcols, pgoalx, pgoaly);
 
       system_mode = 10;
       
