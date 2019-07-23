@@ -1133,7 +1133,9 @@ Serial3.println("COMMANDS FOR ROBOT MOVEMENT:");
   // Straight, Left and Right Manual Commands
   char drivemode;
 
-  if (Serial3.available() > 0)   
+  while(true)
+  {
+    if (Serial3.available() > 0)   
     {
       drivemode = Serial3.read();  
   
@@ -1170,4 +1172,6 @@ Serial3.println("COMMANDS FOR ROBOT MOVEMENT:");
           break;           
        }
     }
+  }
+  
 }
