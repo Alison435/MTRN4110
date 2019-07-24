@@ -22,66 +22,8 @@
 int horizontalWalls[ROWS_wall+1][COLS_wall];
 int verticalWalls[ROWS_wall][COLS_wall+1];
 
-
-//// vertical walls array
-//  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,1,0,0,0,0,1}, 
-//                                                  {1,1,1,0,0,1,0,1,1,1}, 
-//                                                  {1,0,0,1,2,2,1,1,1,1}, 
-//                                                  {1,0,0,0,1,2,2,2,2,1}, 
-//                                                  {1,0,1,0,0,0,1,0,1,1}, 
-//                                                                };
-//                                     //verticalWalls[5][10]
-//                                                                                  
-//  // horizontal walls array                                                 
-//  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
-//                                                     {0,0,1,1,0,1,1,2,2}, 
-//                                                     {0,1,0,1,1,1,2,2,1},
-//                                                     {1,0,1,1,0,1,2,2,2},
-//                                                     {0,1,0,1,0,1,0,1,0},
-//                                                     {1,1,1,1,1,1,1,1,1}
-//                                                    
-//                                                     };            //horizontalWalls[6][9]
-                                                     
-
-//// vertical walls array
-//  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,0,0,0,0,0,1}, 
-//                                                  {1,0,0,0,0,0,0,0,0,1}, 
-//                                                  {1,0,0,0,0,0,0,0,0,1}, 
-//                                                  {1,0,0,0,0,0,0,0,0,1}, 
-//                                                  {1,0,0,0,0,0,0,0,0,1}, 
-//                                                                };
-//                                     //verticalWalls[5][10]
-//                                     
-//                                                                                  
-//  // horizontal walls array                                                 
-//  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
-//                                                     {0,0,0,0,0,0,0,0,0}, 
-//                                                     {0,0,0,0,0,0,0,0,0},
-//                                                     {0,0,0,0,0,0,0,0,0},
-//                                                     {0,0,0,0,0,0,0,0,0},
-//                                                     {1,1,1,1,1,1,1,1,1}
-//                                                    
-//                                                     };            //horizontalWalls[6][9]
-
-//// vertical walls array
-//  int verticalWalls[ROWS_wall][COLS_wall + 1] = { {1,0,0,0,0,0,0,0,0,1}, 
-//                                                  {1,0,0,0,0,0,0,0,0,1}, 
-//                                                  {1,0,0,0,1,1,0,0,0,1}, 
-//                                                  {1,0,0,1,1,1,0,0,0,1}, 
-//                                                  {1,1,1,0,0,1,0,0,0,1}, 
-//                                                                };
-//                                     //verticalWalls[5][10]
-//                                     
-//                                                                                  
-//  // horizontal walls array                                                 
-//  int horizontalWalls[ROWS_wall + 1][COLS_wall]  = { {1,1,1,1,1,1,1,1,1}, 
-//                                                     {0,0,0,0,0,0,0,0,0}, 
-//                                                     {0,0,0,0,1,0,0,0,0},
-//                                                     {1,1,1,0,0,0,0,0,0},
-//                                                     {0,1,0,1,0,0,0,0,0},
-//                                                     {1,1,1,1,1,1,1,1,1}
-//                                                    
-//                                                     };            //horizontalWalls[6][9]
+int TwohorizontalWalls[ROWS_wall+1][COLS_wall];
+int TwoverticalWalls[ROWS_wall][COLS_wall+1];
                        
 
 //Mouse Stuff  
@@ -91,7 +33,9 @@ int mouseHeading;
 
 //Store values from flood fill
 int values[ROWS_wall][COLS_wall];
+int Twovalues[ROWS_wall][COLS_wall];
 int path[ROWS_wall][COLS_wall];
+int Twopath[ROWS_wall][COLS_wall];
 
 //ONLY FOR 3X3 MAZE FOR NOW
 
@@ -110,6 +54,8 @@ int x = 0;
 //arrays to store stuff in
 int array_H[H_size];
 int array_V[V_size];
+int Twoarray_H[H_size];
+int Twoarray_V[V_size];
 
 //var from serial
 unsigned int integerValue=0;  // Max value is 65535
@@ -123,11 +69,13 @@ int v = 0;
 //Function Declarations
 void Print_Maze();
 void Get_Maze_Layout();
+
 void Get_Robot_Pos();
 void Get_Start();
 void Get_Dir();
 void flood_fill();
-void print_value();
+void Twoflood_fill();
+void Twoprint_value();
 /////////////////////////////
 
                                                    
@@ -136,7 +84,7 @@ void setup() {
 
   //Setup Serial
   Serial.begin(9600);
-  //Serial1.begin(9600);
+ // Serial3.begin(9600);
 
   //GOOD
   //get maze layout
@@ -153,9 +101,11 @@ void setup() {
   //GOOD
   //carry out flood fill on maze
   flood_fill();
+  Twoflood_fill();
 
   //print maze
   Print_Maze();
+  Twoprint_Maze();
 
   digitalWrite(13,LOW);
 }
@@ -196,7 +146,6 @@ void Get_Maze_Layout(){
         case('\n'):         
           //array_V[ivert] = 0; //null terminator
           allVertWalls = 1;
-          delay(15);
           break;
 
         case '\r':   // discard carriage return
@@ -206,11 +155,12 @@ void Get_Maze_Layout(){
           if (ivert < MAX_INPUT_VERT)
             integerValue *= 10;
             integerValue = ((detectedWallV - '0') + integerValue);
-            array_V[ivert++] = integerValue; //fill in array_V            
+            array_V[ivert++] = integerValue; //fill in array_V                
           break;
        }
     }  
   }
+  
   Serial.println("Vertical DONE");
   delay(15);  
 
@@ -226,7 +176,6 @@ void Get_Maze_Layout(){
         case('\n'):         
           //array_H[ihorz] = 0; //null terminator
           allHorzWalls = 1;
-          delay(15);
           break;
 
         case '\r':   // discard carriage return
@@ -236,7 +185,73 @@ void Get_Maze_Layout(){
           if (ihorz < MAX_INPUT_HORZ)
             integerValue *= 10;
             integerValue = ((detectedWallH - '0') + integerValue);
-            array_H[ihorz++] = integerValue; //fill in array_H           
+            array_H[ihorz++] = integerValue; //fill in array_H  
+                                 
+          break;
+       }
+    }  
+  }
+  Serial.println("Horizontal DONE");
+  ///////////////////////////////////////////////////
+
+  allHorzWalls = 0;
+  allVertWalls = 0;  
+  ihorz = 0;
+  ivert = 0;
+
+  Serial.println("Please enter all 50 Vertical values for unexplored)"); 
+  while (allVertWalls == 0)
+  {
+    while (Serial.available () > 0)
+    {
+      char detectedWallV = Serial.read();
+      integerValue = 0;
+      switch (detectedWallV)
+      {  
+        case('\n'):         
+          //array_V[ivert] = 0; //null terminator
+          allVertWalls = 1;
+          break;
+
+        case '\r':   // discard carriage return
+          break;
+                    
+        default:
+          if (ivert < MAX_INPUT_VERT)
+            integerValue *= 10;
+            integerValue = ((detectedWallV - '0') + integerValue);
+            Twoarray_V[ivert++] = integerValue; //fill in array_V                
+          break;
+       }
+    }  
+  }
+  
+  Serial.println("Vertical DONE");
+  delay(15);  
+
+  Serial.println("Please enter all 54 Horizontal values for unexplored");
+  while (allHorzWalls == 0)
+  {
+    while (Serial.available () > 0)
+    {
+      char detectedWallH = Serial.read();
+      integerValue = 0;
+      switch (detectedWallH)
+      {  
+        case('\n'):         
+          //array_H[ihorz] = 0; //null terminator
+          allHorzWalls = 1;
+          break;
+
+        case '\r':   // discard carriage return
+          break;
+                             
+        default:
+          if (ihorz < MAX_INPUT_HORZ)
+            integerValue *= 10;
+            integerValue = ((detectedWallH - '0') + integerValue);
+            Twoarray_H[ihorz++] = integerValue; //fill in array_H  
+                                 
           break;
        }
     }  
@@ -288,6 +303,52 @@ void Get_Maze_Layout(){
           }
         }
       }
+
+  /////////////////////////////////////
+
+////Convert array to suitable size array
+////store values
+      x=0;
+      //horizontal
+      for(int row = 0; row < ROWS_wall+1; row++){
+        for(int col = 0; col < COLS_wall; col++){
+          if(x != H_size){
+            TwohorizontalWalls[row][col] = Twoarray_H[x++];
+          }
+        }
+      }
+      x=0;
+      //vertical
+      for(int row = 0; row < ROWS_wall; row++){
+        for(int col = 0; col < COLS_wall + 1; col++){
+          if(x != V_size){
+            TwoverticalWalls[row][col] = Twoarray_V[x++];
+          }
+        }
+      }
+
+  /////////////////////////////////////
+  
+  Serial.println("New array 2 Vert ");
+  //print array_V
+      for(int row = 0; row < ROWS_wall; row++){
+        for(int col = 0; col < COLS_wall + 1; col++){
+            Serial.print(TwoverticalWalls[row][col]);
+        }
+      }
+  Serial.print("\n");
+  
+  Serial.println("New array 2 hor ");
+      for(int row = 0; row < ROWS_wall; row++){
+        for(int col = 0; col < COLS_wall + 1; col++){
+            Serial.print(TwohorizontalWalls[row][col]);
+        }
+      }
+      for(int row = 0; row < ROWS_wall; row++){
+            
+
+      }
+  Serial.print("\n");
 
 }
 
@@ -519,6 +580,235 @@ while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
         }
         Serial.print("\n");       
     }
+
+
+void Twoprint_Maze(){
+
+bool cellMoved;
+int value = 0;
+int CurrRowCheck = 2;
+int CurrColCheck = 4;
+//
+////keep track of the column and row of every two cells 
+int prevRow = 2;
+int prevCol = 4;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//FINDING PATH
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
+{
+           for(int i = 0;i < 2*ROWS_wall+1;i++)
+           {          
+            for(int j = 0;j < 2*COLS_wall+1;j++)
+            {
+
+             //Add Flood Fill Values
+                if(i%2 == 1 && j%2== 1){
+                    if((i-1)/2 == mouseSRow && (j-1)/2 == mouseSColumn)
+                    {
+
+                    } else
+                    {
+                        //represents the current cell the for loops are checking
+                        value = Twovalues[(i-1)/2][(j-1)/2]; 
+
+                        // in flood fill reverse path from goal
+                        if(value <= Max_Value_Goal){
+ 
+                            if (cellMoved == true); cellMoved = false;
+
+                            if(((i-1)/2) == CurrRowCheck && ((j-1)/2) == CurrColCheck && (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn))
+                            {
+                                // if a valid curr row and curr col. (tracker for the Cells)
+                                Twovalues[CurrRowCheck][CurrColCheck] = 'p';  
+
+                                
+                                // ----------------CHECK WEST------------
+                                if(TwoverticalWalls[CurrRowCheck][CurrColCheck] == 0){ 
+                                                    //Serial.print("!"); //check if direction was valid
+                                    if(Twovalues[CurrRowCheck][CurrColCheck - 1] == (value - 1))
+                                    {
+
+                                        Twopath[CurrRowCheck][CurrColCheck] = value;
+                                        CurrRowCheck = CurrRowCheck;
+                                        CurrColCheck = CurrColCheck - 1; //move to west cell                                                             
+                                        //Serial.print(CurrRowCheck); Serial.print(CurrColCheck);
+    
+                                          //Serial.print(CurrRowCheck); Serial.print(CurrColCheck);
+                                        if (cellMoved == false) {
+                                          cellMoved = true; //Serial.print("_W");
+                                          //commandArray[command_i++] = 'W';
+                                        }
+                                                     
+                                    }
+                                }
+
+                              // ----------------CHECK NORTH------------
+                                //check NORTH
+                                //only check if the walls or not there
+                                if(TwohorizontalWalls[CurrRowCheck][CurrColCheck] == 0){
+                                 // Serial.print("#"); //check if direction was valid
+                                    //check if the north
+                                    if(Twovalues[CurrRowCheck-1][CurrColCheck] == value - 1 ){                                        
+                                            Twopath[CurrRowCheck][CurrColCheck] = value;
+                                            CurrRowCheck = CurrRowCheck - 1;
+                                            CurrColCheck = CurrColCheck;
+                                            if (cellMoved == false)
+                                            {
+                                              cellMoved = true;// Serial.print("_N");
+                                              //commandArray[command_i++] = 'N' ;
+                                            }  
+                                      }                              
+                                  }
+
+                               // ----------------CHECK  EAST------------
+                                if(TwoverticalWalls[CurrRowCheck][CurrColCheck+1] == 0){
+                                       //Serial.print("E"); //check if direction was valid
+
+                                    if(Twovalues[CurrRowCheck][CurrColCheck + 1] == (value - 1) ){ //right of current robot position
+                                            Twopath[CurrRowCheck][CurrColCheck] = value;
+                                            CurrRowCheck = CurrRowCheck;
+                                            CurrColCheck = CurrColCheck + 1;  //move to east cell    
+                                            if (cellMoved == false){
+                                              cellMoved = true;// Serial.print("_E");
+                                              //commandArray[command_i++] = 'E';
+                                            }
+                                    }
+                                }
+
+                                
+                                 // ----------------CHECK SOUTH------------
+                                if(TwohorizontalWalls[CurrRowCheck + 1][CurrColCheck] == 0){
+                                             //Serial.print("S"); //check if direction was valid
+                                    if(Twovalues[CurrRowCheck + 1][CurrColCheck] == value - 1 ){                                      
+                                          Twopath[CurrRowCheck][CurrColCheck] = value;
+                                          CurrRowCheck = CurrRowCheck + 1;
+                                          CurrColCheck = CurrColCheck;
+                                            if (cellMoved == false)
+                                            {
+                                              cellMoved = true;// Serial.print("_S");
+                                              //commandArray[command_i++] = 'S';
+                                            }
+                                    }
+                                }                                                                                                                      
+                            }
+                        }  
+                    }          
+                                                          
+                }
+                             
+            }
+        }
+    }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//PRINTING
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+           for(int i = 0;i < 2*ROWS_wall+1;i++)
+           {
+           
+            for(int j = 0;j < 2*COLS_wall+1;j++)
+            {
+                //Add Horizontal Walls
+                if(i%2 == 0 && j%2 == 1)
+                {
+                    if(TwohorizontalWalls[i/2][j/2] == true)
+                    {
+                        Serial.print(" -----");
+                    } else if(TwohorizontalWalls[i/2][j/2] == 2){
+                         Serial.print(" *****");
+                    }
+                    else
+                    {
+                        Serial.print("      ");
+                    }
+                }
+
+                //Add Vertical Walls
+                if(i%2 == 1 && j%2 == 0)
+                {
+                    if(TwoverticalWalls[i/2][j/2] == true)
+                    {      
+                            Serial.print("|  ");
+                        }else if(TwoverticalWalls[i/2][j/2] == 2){
+                                Serial.print("*  ");
+                        }
+                        else
+                        {
+                            Serial.print("   ");                    
+                    }
+            }
+
+             //Add Flood Fill Values
+                if(i%2 == 1 && j%2== 1){
+                    if((i-1)/2 == mouseSRow && (j-1)/2 == mouseSColumn)
+                    {
+                        if(mouseHeading == NORTH)
+                        {
+                            Serial.print("N");
+                            Serial.print("  "); 
+                        }
+                        else if(mouseHeading == EAST)
+                        {
+                            Serial.print("E");
+                            Serial.print("  ");
+                        }
+                        else if(mouseHeading == SOUTH)
+                        {
+                            Serial.print("S");
+                            Serial.print("  ");
+                        }
+                        else if(mouseHeading == WEST)
+                        {
+                            Serial.print("W");
+                            Serial.print("  ");
+                        }
+                    }
+                    else
+                    {
+                        if((i-1)/2 == goalRow && (j-1)/2 == goalCol){
+                            if(Twopath[(i-1)/2][(j-1)/2] < 10){
+                                Serial.print("X");
+                                Serial.print("  "); 
+                            } else {
+                                Serial.print("X");
+                                Serial.print("  ");                                  
+                            }                                                        
+                        } else {
+                            if (Twopath[(i-1)/2][(j-1)/2] != 0)
+                            {
+                                //print path values
+                                if(Twopath[(i-1)/2][(j-1)/2] < 10){
+                                    Serial.print(Twopath[(i-1)/2][(j-1)/2]);
+                                    Serial.print("  "); 
+                                } else {
+                                    Serial.print(Twopath[(i-1)/2][(j-1)/2]);
+                                    Serial.print(" ");                                  
+                                }                                             
+                            } else {
+                                  if(Twopath[((i-1)/2)][((j-1)/2)] < 10){
+                                      Serial.print(" ");
+                                      Serial.print("  ");                                  
+                                  } else {
+                                      Serial.print("  ");
+                                      Serial.print(" ");                                  
+                                  }                                     
+                            }                          
+                        }
+                    }
+                }                                                                                                
+            }
+             Serial.print("\n");           
+        }
+        Serial.print("\n");       
+    }
     
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -669,7 +959,6 @@ void flood_fill(){
   //Store value of goal
   Max_Value_Goal = values[goalRow][goalCol];
 
-
 //////////////////////////
 //testing
 //print contents of values array
@@ -693,6 +982,81 @@ void flood_fill(){
 
 }
 
+void Twoflood_fill(){
+  //start from mouse start postion then flood
+  int row = 0 ;
+  int col = 0;
+  int mazeValueChanged = 1;
+  int CurrentExploredValue = 0;
+  int N = (ROWS_wall*COLS_wall)-1;
+  
+  //set all cell values to 8 (unexplored)
+  //Set start cell to 0
+  for(int row = 0;row < ROWS_wall; row++){
+    for(int col = 0; col < COLS_wall; col++){
+       if(row == mouseSRow && col == mouseSColumn){
+         Twovalues[mouseSRow][mouseSColumn] = 0;
+       }else {
+         Twovalues[row][col] = N;
+       }
+    }
+  }
+ 
+//  //Do floodfill
+  while(mazeValueChanged != 0){
+    mazeValueChanged = 0;
+    for(int FloodR = 0; FloodR < ROWS_wall; FloodR++){
+        for(int FloodC = 0; FloodC < COLS_wall; FloodC++){
+            if(Twovalues[FloodR][FloodC] == CurrentExploredValue){
+                //check NORTH
+                if(TwohorizontalWalls[FloodR][FloodC] == 0){
+                    if(Twovalues[FloodR-1][FloodC] == N){
+                        Twovalues[FloodR-1][FloodC] = Twovalues[FloodR][FloodC] + 1;
+                        mazeValueChanged = 1;
+                    }
+                }
+                
+                if(TwoverticalWalls[FloodR][FloodC+1] == 0){ //check EAST
+                    if(Twovalues[FloodR][FloodC+1] == N){
+                        Twovalues[FloodR][FloodC+1] = Twovalues[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;
+                    }
+                }
+                
+                if(TwohorizontalWalls[FloodR+1][FloodC] == 0){ //checl SOUTH
+                    if(Twovalues[FloodR+1][FloodC] == N){
+                        Twovalues[FloodR+1][FloodC] = Twovalues[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;
+                    }
+                }
+                
+                if(TwoverticalWalls[FloodR][FloodC] == 0){ //check WEST
+                    if(Twovalues[FloodR][FloodC-1] == N){
+                        Twovalues[FloodR][FloodC-1] = Twovalues[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;                 
+                    }
+                }   
+            }          
+        }
+    }
+    CurrentExploredValue += 1;
+  }
+
+  //Store value of goal
+  Max_Value_Goal = Twovalues[goalRow][goalCol];
+
+
+//////////////////////////
+//testing
+//print contents of values array
+
+ for(int row = 0;row < ROWS_wall; row++){
+    for(int col = 0; col < COLS_wall; col++){
+         Serial.print(Twovalues[row][col]);
+    }
+ } 
+    Serial.print("\n");
+}
 
 
 
@@ -714,7 +1078,107 @@ void loop()
 Serial.println("");
 Serial.println("COMMANDS FOR ROBOT MOVEMENT:");
 
+       
 
+          if(mouseHeading == 0){ //north
+                //check south
+                if(TwohorizontalWalls[mouseSRow+1][mouseSColumn] == 0){
+                    if(values[mouseSRow+1][mouseSColumn] == 'p' ){
+                      Serial.print("turn right"); Serial.print("   "); 
+                      Serial.print("turn right"); Serial.print("   ");
+                    }
+                }
+              
+                 //check east
+                 if(TwoverticalWalls[mouseSRow][mouseSColumn+1] == 0){
+                    if(values[mouseSRow][mouseSColumn+1] == 'p'  ){
+                      Serial.print("turn right"); Serial.print("   "); 
+                    }
+                 }
+                                          
+                  //check west
+                  if(TwoverticalWalls[mouseSRow][mouseSColumn] == 0){
+                    if(values[mouseSRow][mouseSColumn-1] == 'p'  ){
+                      Serial.print("turn left"); Serial.print("   "); 
+                    }
+                  }
+                          
+           }
+
+          else if(mouseHeading == 2){ //south
+                //check north
+                if(TwohorizontalWalls[mouseSRow][mouseSColumn] == 0){
+                    if(values[mouseSRow-1][mouseSColumn] == 'p' ){
+                      Serial.print("turn left"); Serial.print("   "); 
+                      Serial.print("turn left"); Serial.print("   ");
+                    }
+                }
+              
+                 //check east
+                 if(TwoverticalWalls[mouseSRow][mouseSColumn+1] == 0){
+                    if(values[mouseSRow][mouseSColumn+1] == 'p'  ){
+                      Serial.print("turn left"); Serial.print("   ");
+                    }
+                 }
+                                          
+                  //check west
+                  if(TwoverticalWalls[mouseSRow][mouseSColumn] == 0){
+                    if(values[mouseSRow][mouseSColumn-1] == 'p'  ){
+                      Serial.print("turn right"); Serial.print("   ");
+                    }            
+                  }
+           }
+
+           else if(mouseHeading == 3){ //west
+                //check north
+                if(TwohorizontalWalls[mouseSRow][mouseSColumn] == 0){
+                    if(values[mouseSRow-1][mouseSColumn] == 'p' ){
+                      Serial.print("turn right"); Serial.print("   "); 
+                    }
+                }
+                
+                 //check east
+                 if(TwoverticalWalls[mouseSRow][mouseSColumn+1] == 0){
+                    if(values[mouseSRow][mouseSColumn+1] == 'p'  ){
+                      Serial.print("turn right"); Serial.print("   ");
+                      Serial.print("turn right"); Serial.print("   ");
+                    }
+                 }
+                                          
+                  //check  South
+                  if(TwohorizontalWalls[mouseSRow+1][mouseSColumn] == 0){
+                    if(values[mouseSRow+1][mouseSColumn] == 'p'  ){
+                      Serial.print("turn left"); Serial.print("   ");
+                    }    
+                  }        
+           }       
+
+ 
+           else if(mouseHeading == 1){ //east
+                //check north
+                if(TwohorizontalWalls[mouseSRow][mouseSColumn] == 0){
+                    if(values[mouseSRow-1][mouseSColumn] == 'p' ){
+                      Serial.print("turn left"); Serial.print("   "); 
+                    }
+                }
+                
+                 //check west
+                 if(TwoverticalWalls[mouseSRow][mouseSColumn] == 0){
+                    if(values[mouseSRow][mouseSColumn-1] == 'p'  ){
+                      Serial.print("turn left"); Serial.print("   ");
+                      Serial.print("turn left"); Serial.print("   ");
+                    }
+                 }
+                                          
+                  //check  South
+                  if(TwohorizontalWalls[mouseSRow+1][mouseSColumn] == 0){
+                    if(values[mouseSRow+1][mouseSColumn] == 'p'  ){
+                      Serial.print("turn right"); Serial.print("   ");
+                    }      
+                  }      
+           }              
+  
+  
      for (int k = Max_Value_Goal; k >= 0; k--)
      {      
           if(commandArray[k] == 'N'){
@@ -776,13 +1240,46 @@ Serial.println("COMMANDS FOR ROBOT MOVEMENT:");
                   Serial.print("forward"); Serial.print("   ");                                
               }else {
                   Serial.print("forward"); Serial.print("   ");                 
-              }      
+              }    
           }  
      }
-// Interpret commands/direction sequence (to send to Robot for auto mode)
 
-//TODO
+//////////////////////////////////////////////////////
+// Check if unexplored sufficient or not
 
+int check = 0;
+
+    for(int FloodR = 0; FloodR < ROWS_wall; FloodR++){
+            for(int FloodC = 0; FloodC < COLS_wall; FloodC++){
+                if(path[FloodR][FloodC] == Twopath[FloodR][FloodC]){
+                  check  = 0;
+                } else {
+                  check  = 1;
+                  break;
+                }
+//                Serial.print(path[FloodR][FloodC]);
+//                Serial.print(Twopath[FloodR][FloodC]);
+//                Serial.print("\n");
+//                Serial.print("\ncheck:");
+//                Serial.print(check);
+//                Serial.print("\n");
+            }
+            if(check ==1 ){
+              break;
+            }
+     }
+
+        Serial.print("\n");
+
+ 
+ if(check == 0){
+    Serial.print("\nMaze was sufficiently explored\n");
+ } else{
+    Serial.print("\nMaze was not sufficiently explored\n");
+ }
+
+ 
   while (true) {};
   
 }
+
