@@ -1,3 +1,3 @@
 # MTRN4110
 
-Header and source files provided are available on master, files specific to each section/part are in branch
+Contains MATLAB and Python code required to take image of maze, encode mazeand send via bluetooth to the robot
