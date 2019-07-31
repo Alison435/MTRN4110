@@ -1094,9 +1094,6 @@ void loop()
 //    }
 // }
 
-Serial3.println("");
-Serial3.println("COMMANDS FOR ROBOT MOVEMENT:");
-
      for (int k = Max_Value_Goal; k >= 0; k--)
      {      
           if(commandArray[k] == 'N'){
@@ -1200,7 +1197,7 @@ Serial3.println("COMMANDS FOR ROBOT MOVEMENT:");
       case('^'):
         Serial.print("^");   
         resetAllEncoders();
-        delay(5);
+        delay(50);
         robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED);
         resetAllEncoders();
         break;
@@ -1208,7 +1205,7 @@ Serial3.println("COMMANDS FOR ROBOT MOVEMENT:");
       case('>'):
         Serial.print(">");
         resetAllEncoders();
-        delay(5);
+        delay(50);
         robotTurn(1);
         resetAllEncoders();        
         break;
@@ -1216,7 +1213,7 @@ Serial3.println("COMMANDS FOR ROBOT MOVEMENT:");
       case('<'):        
         Serial.print("<");
         resetAllEncoders();
-        delay(5);
+        delay(50);
         robotTurn(0);
         resetAllEncoders();        
         break;
