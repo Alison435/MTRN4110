@@ -605,7 +605,14 @@ int prevCol = 4;
 //FINDING PATH
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
+  //set all cell values to 99 all cells
+  for(int row = 0;row < ROWS_wall; row++){
+    for(int col = 0; col < COLS_wall; col++){
+         Twopath[row][col] = 99;
+       }
+    }
+  }
+  
 while (CurrRowCheck != mouseSRow || CurrColCheck != mouseSColumn)
 {
            for(int i = 0;i < 2*ROWS_wall+1;i++)
