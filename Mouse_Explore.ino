@@ -41,15 +41,23 @@ int movement_num = 0;
 //arrays for map
 int Hmap[10][10];  //global maze map horizontal extended
 int Vmap[10][10];  //global maze map vertical extended
+int Hmap2[10][10];  //global maze map horizontal extended
+int Vmap2[10][10];  //global maze map vertical extended
 int tempMap[10][10];  //temp map to transfer map details 
+
 int prows;
 int pcols;
 int pheading;
 int pgoalx;
 int pgoaly;
+bool SExplored;
 
 //global cases for flood fill map
 int values[9][9];
+int ConvertToWalls[9][9];
+int pathOne[9][9];
+int pathTwo[9][9];
+
 
 // Encoder variables for Phase A
 volatile int eCountR = 0; 
@@ -762,8 +770,7 @@ void storemaze(short compassd, short i, short j, int L1wall, int L2wall, int ult
 
 short findnextdir(short &i, short &j, short &oldi, short &oldj, int rows_wall, int cols_wall) {
   short nextdir = 5;
-  //Serial3.println(Vmap[i][j+1]);
-  //Serial3.print("j = "); Serial3.println(j);
+
   //check north
   if (j != 0 && Vmap[i][j] != 1) {                                                     //check east
     if (values[i][j] == (values[i][j-1]+1) && oldj != (j-1)) 
@@ -806,6 +813,50 @@ short findnextdir(short &i, short &j, short &oldi, short &oldj, int rows_wall, i
   return nextdir;
 }
 
+short findnextdir2(short &i, short &j, short &oldi, short &oldj, int rows_wall, int cols_wall) {
+  short nextdir = 5;
+
+  //check north
+  if (j != 0 && Vmap2[i][j] != 1) {                                                     //check east
+    if (ConvertToWalls[i][j] == (ConvertToWalls[i][j-1]+1) && oldj != (j-1)) 
+      nextdir = EAST;
+  }
+  if (i !=0 && Hmap2[i][j] != 1) {                                                       //check south
+    if (ConvertToWalls[i][j] == (ConvertToWalls[i-1][j]+1) && oldi != (i-1))
+      nextdir = SOUTH;
+  }
+  if (j != (cols_wall-1) && Vmap2[i][j+1] != 1) {                                         //check west
+    if (ConvertToWalls[i][j] == (ConvertToWalls[i][j+1]+1) && oldj != (j+1))
+      nextdir = WEST;
+   }
+
+  if (i != (rows_wall-1) && Hmap2[i+1][j] != 1) {
+    if (ConvertToWalls[i][j] == (ConvertToWalls[i+1][j]+1) && oldi != (i+1)){
+      nextdir = NORTH;
+    }
+  }
+  
+  if (nextdir == 5) {
+    //next set of preferences if only available path has been previously travelled
+    if (j != 0 && Vmap2[i][j] != 1) {                                                        //check east
+      if (ConvertToWalls[i][j] == (ConvertToWalls[i][j-1]+1))
+        nextdir = EAST;
+    } 
+    if (i !=0 && Hmap2[i][j] != 1) {                                                       //check south
+      if (ConvertToWalls[i][j] == (ConvertToWalls[i-1][j]+1))
+        nextdir = SOUTH;
+    } 
+    if (j != (cols_wall - 1) && Vmap2[i][j+1] != 1) {                                               //check west
+      if (ConvertToWalls[i][j] == (ConvertToWalls[i][j+1]+1))
+        nextdir = WEST;
+    }
+    if (i != (rows_wall-1) && Hmap2[i+1][j] != 1) {
+      if (ConvertToWalls[i][j] == (ConvertToWalls[i+1][j]+1))
+        nextdir = NORTH;
+    }
+  }
+  return nextdir;
+}
 
 //prints Hmaze and Vmaze combined
 void printMaze(short initialheading, int rows_wall, int cols_wall, int goalx, int goaly) {
@@ -871,7 +922,8 @@ void setup() {
 // State Machine
 #define MODE_OFF 1
 #define MODE_EXPLORE 2
-#define MODE_GOAL 3
+#define MODE_GOAL 3 
+#define MODE_SPEEDRUN 4
 int system_mode = MODE_OFF;
 
 void loop()
@@ -919,6 +971,7 @@ void loop()
       int goaly;
       int moveCount;
       float distance;
+      SExplored = false;
 
       //initial flood fill values
       goalx = 5;
@@ -938,91 +991,88 @@ void loop()
       distance = 0;
       
       while(!sizedet){
+        
+        while (!gyro()) {
+          delay(50);
+          gyro();     
+        }
+        
+        compassd = compass();
+        tcompass = compassd;  //store value into temp just in case
+        //Serial3.print("Current dir = "); Serial3.println(compassd); 
 
-        //if (Serial3.available() > 0) {
-         // drivemode = Serial3.read();
+        //determine if need to swap east and west 
+        if (!firstopen) 
+        { 
+          checkflip(i,j,compassd,firstopen,swapdir);
 
-          while (!gyro()) {
-            delay(50);
-            gyro();     
-          }
-          
-          compassd = compass();
-          tcompass = compassd;  //store value into temp just in case
-          //Serial3.print("Current dir = "); Serial3.println(compassd); 
-
-          //determine if need to swap east and west 
-          if (!firstopen) 
-          { 
-            checkflip(i,j,compassd,firstopen,swapdir);
-
-            if (swapdir) {
-              //flip all previous values
-              transfermap(rows_wall,cols_wall);
-            }
-          }
-    
-          compassd = othersp(swapdir, compassd);
-          
-          readAndstore(i, j, compassd, swapdir);  
-          
-          flood_fill(goalx,goaly,rows_wall, cols_wall);
-          
-          nextdir = findnextdir(i,j, oldi, oldj, rows_wall, cols_wall);
-
-          //if you can't find a direction then redo
-          while (nextdir == 5) {
-            readAndstore(i,j,compassd, swapdir);
-            flood_fill(goalx,goaly, rows_wall, cols_wall);
-            nextdir = findnextdir(i,j,oldi,oldj, rows_wall, cols_wall);
-            lcd.clear();
-            lcd.print("Processing...");
-          }
-          
-          //update oldi and oldj
-          oldi = i;
-          oldj = j;
-          
-          newpos(i,j,nextdir);  //updates north count as well
-         
-          //adjusting output next direction for flip if needed
           if (swapdir) {
-            if (nextdir == EAST) {
-              nextdir = WEST;
-            } else if (nextdir == WEST) {
-              nextdir = EAST;
-            }
+            //flip all previous values
+            transfermap(rows_wall,cols_wall);
           }
-
-          compassd = tcompass;  //compassd is now = to real heading that was stored
-         
-         moveCount++; //update movecount before moving since starting at 0;
-         moveRobot(compassd, nextdir, moveCount);
+        }
   
-          //check if goal has been reached
-          if (i >= goalx) {
-            initialheading = SOUTH;
-            pheading = initialheading;
-            sizedet = true;
-            //lcd.clear();
-            //lcd.print("GOAL 1.1 REACHED");
-            //delay(1000);
-            break;
-          } else if (j >= goaly) {
-            initialheading = WEST;
-            pheading = initialheading;
-            sizedet = true;
-            //lcd.clear();
-            //lcd.print("GOAL 1.2 REACHED");
-            //delay(1000);
-            break;
+        compassd = othersp(swapdir, compassd);
+        
+        readAndstore(i, j, compassd, swapdir);  
+        
+        flood_fill(goalx,goaly,rows_wall, cols_wall);
+        
+        nextdir = findnextdir(i,j, oldi, oldj, rows_wall, cols_wall);
+
+        //if you can't find a direction then redo
+        while (nextdir == 5) {
+          readAndstore(i,j,compassd, swapdir);
+          flood_fill(goalx,goaly, rows_wall, cols_wall);
+          nextdir = findnextdir(i,j,oldi,oldj, rows_wall, cols_wall);
+          lcd.clear();
+          lcd.print("Processing...");
+        }
+        
+        //update oldi and oldj
+        oldi = i;
+        oldj = j;
+        
+        newpos(i,j,nextdir);  //updates north count as well
+       
+        //adjusting output next direction for flip if needed
+        if (swapdir) {
+          if (nextdir == EAST) {
+            nextdir = WEST;
+          } else if (nextdir == WEST) {
+            nextdir = EAST;
           }
-        //}
+        }
+
+        compassd = tcompass;  //compassd is now = to real heading that was stored
+       
+       moveCount++; //update movecount before moving since starting at 0;
+       moveRobot(compassd, nextdir, moveCount);
+
+        //check if goal has been reached
+        if (i >= goalx) {
+          initialheading = SOUTH;
+          pheading = initialheading;
+          sizedet = true;
+          //lcd.clear();
+          //lcd.print("GOAL 1.1 REACHED");
+          //delay(1000);
+          break;
+        } else if (j >= goaly) {
+          initialheading = WEST;
+          pheading = initialheading;
+          sizedet = true;
+          //lcd.clear();
+          //lcd.print("GOAL 1.2 REACHED");
+          //delay(1000);
+          break;
+        }
+       
     }
 
     //lcd.clear();
     //lcd.print("NEW GOAL");
-    //delay(1000);
+
     //reset size and goal
     switch(initialheading){
       case(WEST):
@@ -1035,7 +1085,7 @@ void loop()
         pgoalx = goalx;
         pgoaly = goaly;
 
-        while(!goal) {
+        while(!SExplored) {
           
           while (!gyro()) {
             delay(50);
@@ -1046,11 +1096,17 @@ void loop()
           compassd = othersp(swapdir, compassd);
           readAndstore(i, j, compassd, swapdir);  
 
-          //end condition - will read walls of goal
-          if (i == goalx && j == goaly) {
-            goal = true;
-            system_mode = MODE_GOAL;
+          //compare paths
+          //if explored break, if not continue exploring
+          //find a new goal based on unexplored arrays 
+          //then feed the new goal to flood fill and head there
+          if (compare_path()) 
+          {
+            SExplored = true;
+            system_mode = MODE_SPEEDRUN;
             break;
+          } else {
+            //calculate new goal
           }
           
           //apply flood fill for 5 by 9
@@ -1067,6 +1123,7 @@ void loop()
             lcd.clear();
             lcd.print("Processing...1");
           }
+          
           //update oldi and oldj
           oldi = i;
           oldj = j;
@@ -1098,7 +1155,7 @@ void loop()
         pgoalx = goalx;
         pgoaly = goaly;
 
-        while(!goal) {
+        while(!SExplored) {
 
           while (!gyro()) {
             delay(50);
@@ -1109,12 +1166,17 @@ void loop()
           compassd = othersp(swapdir, compassd);
           readAndstore(i, j, compassd, swapdir);  
 
-          
-          //end condition - will read walls of goal
-          if (i == goalx && j == goaly) {
-            goal = true;
-            system_mode = MODE_GOAL;
+          //compare paths
+          //if explored break, if not continue exploring
+          //find a new goal based on unexplored arrays 
+          //then feed the new goal to flood fill and head there
+          if (compare_path()) 
+          {
+            SExplored = true;
+            system_mode = MODE_SPEEDRUN;
             break;
+          } else {
+            //calculate new goal
           }
           
           //apply flood fill for 9 by 5
@@ -1159,13 +1221,42 @@ void loop()
     
     break;
 
-    case(MODE_GOAL):
+    case(MODE_SPEEDRUN):
+      goal = false;
+      i = 0;  //assuming starting back at the start
+      j = 0;
+      oldi = 0;
+      oldj = 0;
+      while(1) 
+      {
+      //flick of switch to break out of loop and start the speed run  
+      }
+
+      //make a finalised path array that you go through
+      
+      while(!goal) 
+      {
+        if (i == pgoalx && j == pgoaly) 
+        {
+          goal = true;
+          break;  
+        }
+        
+        compassd = compass(); //update compass
+
+        //path in values array will be the same as path in isolated arrays - does not prioritise straight though
+        nextdir = findnextdir(i,j, oldi, oldj, prows,pcols);
+        oldi = i;
+        oldj = j;
+        newpos(i,j,nextdir);
+        moveCount++;          //no longer needed if not using LCD
+        moveRobot(compassd, nextdir, moveCount);
+      }
+ 
       statusGreen::write(logic_level::low);
       statusRed::write(logic_level::high); 
-      lcd.clear();
-      lcd.print("   DONE");
       Serial3.println("printing");
-      printMaze(pheading, prows, pcols, pgoalx, pgoaly);
+      //printMaze(pheading, prows, pcols, pgoalx, pgoaly);
 
       system_mode = 10;
       
@@ -1305,6 +1396,66 @@ void flood_fill(int mouseSRow, int mouseSColumn, int rows_wall, int cols_wall) {
   } 
 }
 
+
+//different flood fills
+void flood_fill2(int mouseSRow, int mouseSColumn, int rows_wall, int cols_wall) {
+
+  int mazeValueChanged = 1;
+  int CurrentExploredValue = 0;
+  int N = (rows_wall*cols_wall)-1;
+  
+  //Set start cell to 0
+  for(int row = 0;row < rows_wall; row++){
+    for(int col = 0; col < cols_wall; col++){
+       if(row == mouseSRow && col == mouseSColumn){
+         ConvertToWalls[mouseSRow][mouseSColumn] = 0;
+       }else {
+         ConvertToWalls[row][col] = N;
+       }
+    }
+  }
+ 
+//  //Do floodfill
+  while(mazeValueChanged != 0){
+    mazeValueChanged = 0;
+    for(int FloodR = 0; FloodR < rows_wall; FloodR++){
+        for(int FloodC = 0; FloodC < cols_wall; FloodC++){
+            if(ConvertToWalls[FloodR][FloodC] == CurrentExploredValue){
+                //check NORTH
+                if(FloodR != rows_wall-1){
+                    if((Hmap2[FloodR+1][FloodC] != 1) && (ConvertToWalls[FloodR+1][FloodC] == N)){
+                        ConvertToWalls[FloodR+1][FloodC] = ConvertToWalls[FloodR][FloodC] + 1;
+                        mazeValueChanged = 1;
+                    }
+                } 
+                
+                if(FloodC != 0){ //check EAST
+                    if((Vmap2[FloodR][FloodC] != 1) && (ConvertToWalls[FloodR][FloodC-1] == N)){
+                        ConvertToWalls[FloodR][FloodC-1] = ConvertToWalls[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;
+                    }
+                }
+                
+                if(FloodR != 0){ //checl SOUTH
+                    if((Hmap2[FloodR][FloodC] != 1) && (ConvertToWalls[FloodR-1][FloodC] == N)){
+                        ConvertToWalls[FloodR-1][FloodC] = ConvertToWalls[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;
+                    }
+                }
+                
+                if(FloodC != cols_wall - 1){ //check WEST
+                    if((Vmap2[FloodR][FloodC+1] != 1)&& (ConvertToWalls[FloodR][FloodC+1] == N)){
+                        ConvertToWalls[FloodR][FloodC+1] = ConvertToWalls[FloodR][FloodC]+1;
+                        mazeValueChanged = 1;                 
+                    }
+                }   
+            }          
+        }
+    }
+    CurrentExploredValue += 1;
+  } 
+}
+
 void printflood(int rows_wall, int cols_wall) {
   for (int i = 0; i < rows_wall; i++) {
     for (int j = 0; j < cols_wall; j++) {
@@ -1313,4 +1464,87 @@ void printflood(int rows_wall, int cols_wall) {
     }
     Serial3.println();
   }
+}
+
+//call this after finding orientation of maze
+//isolating fastest path going from sstart to goal
+//note all these directions are relative to the matrix and not reality
+//flip east and west if need be
+void pathOneCalc() {
+  
+short CurrRowCheck = 0;
+short CurrColCheck = 0;
+short prevCurrRowCheck = 0;
+short prevCurrColCheck = 0;
+short nextdir = 5;
+
+for (int i = 0; i < prows; i++) {
+  for (int j = 0; j < pcols; j++) {
+    pathOne[i][j] = prows*pcols+1;
+  }
+}
+
+flood_fill(pgoalx, pgoaly,prows, pcols);
+
+while (CurrRowCheck != prows && CurrColCheck != pcols) {
+  pathOne[CurrRowCheck][CurrColCheck] = values[CurrRowCheck][CurrColCheck];
+  nextdir = findnextdir(CurrRowCheck, CurrColCheck, prevCurrRowCheck, prevCurrColCheck, prows, pcols);
+  newpos(CurrRowCheck, CurrColCheck, nextdir);
+}
+
+}
+
+//isolate second path where unexplored is walls
+void pathTwoCalc() {
+
+for (int i = 0; i <prows+1; i++) {
+  for (int j = 0; j<pcols+1; j++) {
+    Hmap2[i][j] = Hmap[i][j];
+    Vmap2[i][j] = Vmap[i][j];
+    if (Hmap2[i][j] == 2) 
+      Hmap2[i][j] = 1;
+    if (Vmap2[i][j] = 2)
+      Vmap2[i][j] = 1;
+  }
+}
+//flood fill where unexplored is walls
+flood_fill2(pgoalx, pgoaly, prows, pcols);
+
+short CurrRowCheck = 0;
+short CurrColCheck = 0;
+short prevCurrRowCheck = 0;
+short prevCurrColCheck = 0;
+short nextdir = 5;
+
+for (int i = 0; i < prows; i++) {
+  for (int j = 0; j < pcols; j++) {
+    pathTwo[i][j] = prows*pcols+1;
+  }
+}
+
+while (CurrRowCheck != prows && CurrColCheck != pcols) {
+  pathTwo[CurrRowCheck][CurrColCheck] = ConvertToWalls[CurrRowCheck][CurrColCheck];
+  nextdir = findnextdir2(CurrRowCheck, CurrColCheck, prevCurrRowCheck, prevCurrColCheck, prows, pcols);
+  newpos(CurrRowCheck, CurrColCheck, nextdir);
+}
+
+}
+
+//returns 0 if not sufficiently explored
+//returns 1 if exploring is done
+bool compare_path() {
+  bool doneExplore = true;
+
+  //update the isolated paths
+  pathTwoCalc();
+  pathOneCalc();
+  
+  //compare the two paths
+  for (int i = 0; i < prows; i++) {
+    for (int j = 0; j < pcols; j++) {
+      if (pathOne[i][j] != pathTwo[i][j])
+        doneExplore = false; 
+    }
+  }
+  return doneExplore;
 }
