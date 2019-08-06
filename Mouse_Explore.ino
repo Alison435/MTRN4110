@@ -27,7 +27,7 @@ using namespace hardware;
 #define COUNT_PER_REV       1700.0  // 16 CPR * 120:1 gear ratio
 #define CIRCUM              240.0 // mm
 #define STRAIGHT_DISTANCE   200.0 // mm
-#define LIDAR_MAX_SETPOINT  75.0 // mm
+#define LIDAR_MAX_SETPOINT  60.0 // mm
 #define STRAIGHT_SPEED      25.0
 #define COUNT_PER_REV_TURN  1650.0  // 16 CPR * 120:1 gear ratio
 
@@ -238,7 +238,7 @@ void robotForward(float distance, float setSpeedPerc)
   float prevlCount, prevrCount;
  
   // Bias - variable used to offset motor power on right vs left to keep straight.
-  double offset = 2.0;  // offset amount to compensate Right vs. Left drive
+  double offset = 0.12;  // offset amount to compensate Right vs. Left drive
 
   numRev = distance / CIRCUM;  // calculate the target # of rotations
   targetCount = numRev * (COUNT_PER_REV);    // calculate the target count
@@ -255,8 +255,8 @@ void robotForward(float distance, float setSpeedPerc)
     motorControl(1,0,rightPWM,leftPWM);
 
     // Error count from encoder 'ticks'
-    lDiff = (abs(eCountL) - prevlCount)/3;
-    rDiff = (abs(eCountR) - prevrCount)/3;
+    lDiff = (abs(eCountL) - prevlCount);
+    rDiff = (abs(eCountR) - prevrCount);
 
     // Have walls on either side (Part 3 of Phase B)
     // L1 = 65. L2 = 45. Bias = 15
@@ -264,61 +264,63 @@ void robotForward(float distance, float setSpeedPerc)
     //if (use_lidar == true)
     // readings around 
 
-    if ((lidarOne.readRangeSingleMillimeters() <= LIDAR_MAX_SETPOINT && lidarTwo.readRangeSingleMillimeters() <= LIDAR_MAX_SETPOINT))
-    {
-        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 5.0);
-        error_D_lidar = error_P_lidar - prev_error_lidar;
-  
-        //K_p and K_d (for lidar)  
-        totalError = (K_p_lidar * error_P_lidar) + (K_d_lidar * error_D_lidar);
-        prev_error_lidar = error_P_lidar;
-  
-        if (lidarOne.readRangeSingleMillimeters() > lidarTwo.readRangeSingleMillimeters())
-        {
-          leftPWM += 2.0;
-          rightPWM -= 2.0;
+//    if ((lidarOne.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT && lidarTwo.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT))
+//    {
+//        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 2.0);
+//        error_D_lidar = error_P_lidar - prev_error_lidar;
+//  
+//        //K_p and K_d (for lidar)  
+//        totalError = (K_p_lidar * error_P_lidar) + (K_d_lidar * error_D_lidar);
+//        prev_error_lidar = error_P_lidar;
+//  
+//        if (lidarOne.readRangeSingleMillimeters() > lidarTwo.readRangeSingleMillimeters())
+//        {
+//          leftPWM += 0.1;
+//          rightPWM -= 0.1;
+//
+//          if (leftPWM > setSpeedPerc || rightPWM > setSpeedPerc)
+//          {
+//            leftPWM = setSpeedPerc;
+//            rightPWM = setSpeedPerc; 
+//          }
+//        }
+//        else if (lidarOne.readRangeSingleMillimeters() < lidarTwo.readRangeSingleMillimeters())
+//        {
+//          leftPWM -= 0.1;
+//          rightPWM += 0.1;
+//
+//          if (leftPWM >= setSpeedPerc || rightPWM >= setSpeedPerc)
+//          {
+//            leftPWM = setSpeedPerc;
+//            rightPWM = setSpeedPerc; 
+//          }
+//        }     
+//     }
 
-          if (leftPWM > setSpeedPerc || rightPWM > setSpeedPerc)
-          {
-            leftPWM = setSpeedPerc;
-            rightPWM = setSpeedPerc; 
-          }
-        }
-        else if (lidarOne.readRangeSingleMillimeters() < lidarTwo.readRangeSingleMillimeters())
-        {
-          leftPWM -= 2.0;
-          rightPWM += 2.0;
-
-          if (leftPWM >= setSpeedPerc || rightPWM >= setSpeedPerc)
-          {
-            leftPWM = setSpeedPerc;
-            rightPWM = setSpeedPerc; 
-          }
-        }     
-     }
-    
+    //else {
+      
       double e_error = (lDiff - rDiff); //encoder error between left and right wheel
       sumError += e_error;      
       double dError = (lDiff - rDiff) - prev_error_encoder;
 
       totalError = (K_p_encoder * e_error) - (K_d_encoder * setSpeedPerc) + 
       (K_i_encoder * sumError);
-
-      leftPWM += totalError/2.5;  
-      rightPWM -= totalError/2.5;
-
-      if (leftPWM >= setSpeedPerc || rightPWM >= setSpeedPerc)
+    
+      leftPWM += totalError;  
+      rightPWM -= totalError;
+  
+      if (leftPWM >= setSpeedPerc + 5.0 || rightPWM >= setSpeedPerc + 5.0)
       {
-        leftPWM = setSpeedPerc;
-        rightPWM = setSpeedPerc; 
+        leftPWM = setSpeedPerc + 5.0;
+        rightPWM = setSpeedPerc + 5.0; 
       }
 
       prev_error_lidar = e_error; //store previous error for next cycle-        
       // Store previous count  
       prevlCount = abs(eCountL);
       prevrCount = abs(eCountR);
-
-  }
+    //}
+  }    
   robotStop();
   delay(10);
   resetAllEncoders();
@@ -345,7 +347,7 @@ void robotTurn(int directionVal)
 
     while (abs(eCountR) <= COUNT_PER_REV_TURN/3.50)
     {
-      motorControl(0,0,setSpeedPerc,setSpeedPerc);    
+      motorControl(1,1,setSpeedPerc,setSpeedPerc);    
     }
     
     resetEncoderR();
@@ -354,14 +356,14 @@ void robotTurn(int directionVal)
     delay(200);
   }
 
-  else //directionVal is 0
+  else
   {
     //-ve so turn to right (CW)
     //Right - and Left +
 
     while (abs(eCountR) <= COUNT_PER_REV_TURN/3.10)
     {
-      motorControl(1,1,setSpeedPerc,setSpeedPerc);  
+      motorControl(0,0,setSpeedPerc,setSpeedPerc);  
     }
 
   resetEncoderR();
@@ -497,6 +499,23 @@ void startLEDSequence(){
   //Green ON and Red OFF
   statusGreen::write(logic_level::high);
   statusRed::write(logic_level::low);   
+}
+
+void speedRunLED()
+{
+  statusGreen::write(logic_level::high);
+  statusRed::write(logic_level::low); 
+  delay(50);
+  statusGreen::write(logic_level::low);
+  statusRed::write(logic_level::high);
+  delay(50);
+  statusGreen::write(logic_level::high);
+  statusRed::write(logic_level::low); 
+  delay(50);
+  statusGreen::write(logic_level::low);
+  statusRed::write(logic_level::high);
+  delay(1000);
+     
 }
 
 // Timing for hardware tests
@@ -913,6 +932,7 @@ void printMaze(short initialheading, int rows_wall, int cols_wall, int goalx, in
 
 void setup() {
   Wire.begin(); 
+  Serial.begin(9600);
   Serial3.begin(9600);
   setUpLidars();
   setUpUltrasonic();
@@ -1062,6 +1082,7 @@ void loop()
           initialheading = SOUTH;
           pheading = initialheading;
           sizedet = true;
+          Serial.println("Goal 1.1 Reached");
           //lcd.clear();
           //lcd.print("GOAL 1.1 REACHED");
           //delay(1000);
@@ -1070,6 +1091,7 @@ void loop()
           initialheading = WEST;
           pheading = initialheading;
           sizedet = true;
+          Serial.println("Goal 1.2 Reached");
           //lcd.clear();
           //lcd.print("GOAL 1.2 REACHED");
           //delay(1000);
@@ -1079,7 +1101,7 @@ void loop()
     }
 
     //lcd.clear();
-    //lcd.print("NEW GOAL");
+    Serial.println("---NEW GOAL---");
 
     //reset size and goal
     switch(initialheading){
@@ -1108,10 +1130,15 @@ void loop()
           //if explored break, if not continue exploring
           //find a new goal based on unexplored arrays 
           //then feed the new goal to flood fill and head there
+
+          Serial.print("Not SExplored _ West");
+          
           if (compare_path()) 
           {
             SExplored = true;
+            speedRunLED(); //remove later
             system_mode = MODE_SPEEDRUN;
+            Serial.println("READY for SPEED RUN");
             break;
           } else {
             //calculate new goal
@@ -1174,6 +1201,8 @@ void loop()
           compassd = othersp(swapdir, compassd);
           readAndstore(i, j, compassd, swapdir);  
 
+          Serial.print("Not SExplored _ South");
+
           //compare paths
           //if explored break, if not continue exploring
           //find a new goal based on unexplored arrays 
@@ -1181,7 +1210,10 @@ void loop()
           if (compare_path()) 
           {
             SExplored = true;
+            speedRunLED(); //remove later
             system_mode = MODE_SPEEDRUN;
+            Serial.println("READY for SPEED RUN");
+            delay(100);
             break;
           } else {
             //calculate new goal
@@ -1198,8 +1230,7 @@ void loop()
             readAndstore(i,j,compassd, swapdir);
             flood_fill(goalx,goaly, rows_wall, cols_wall);
             nextdir = findnextdir(i,j,oldi,oldj, rows_wall, cols_wall);
-            lcd.clear();
-            lcd.print("Processing...2");
+            Serial.println("Processing...2");
           }
           
           //update oldi and oldj
@@ -1244,7 +1275,11 @@ void loop()
         if (digitalRead(SPEED_RUN) == HIGH)
         {
           startSpeed = true;
-        }      
+          startLEDSequence(); //LED turns green to start timing of run
+          break;
+        }
+        statusGreen::write(logic_level::low);
+        statusRed::write(logic_level::high);       
       }
 
       // make a finalised path array that you go through
@@ -1268,7 +1303,8 @@ void loop()
         moveCount++;          //no longer needed if not using LCD
         moveRobot(compassd, nextdir, moveCount);
       }
- 
+      
+      // LED RED turns on to indicate goal is found
       statusGreen::write(logic_level::low);
       statusRed::write(logic_level::high); 
       Serial3.println("printing");
