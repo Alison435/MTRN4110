@@ -15,10 +15,10 @@
 #include <external_DFRobot_LCD.h>
 
 // Avoids prepending scope operator to all functionsS
-#define SIDEMAX 110
-#define SIDEMIN 10
-#define FRONTMAX 110
-#define FRONTMIN 10
+#define SIDEMAX 130
+#define SIDEMIN 5
+#define FRONTMAX 130
+#define FRONTMIN 5
 
 // Avoids prepending scope operator to all functions
 using namespace hardware;
@@ -50,13 +50,16 @@ int pcols;
 int pheading;
 int pgoalx;
 int pgoaly;
+int tempGoalx;
+int tempGoaly;
 bool SExplored;
+bool swapdir;
 
 //global cases for flood fill map
 int values[9][9];
 int ConvertToWalls[9][9];
-int pathOne[9][9];
-int pathTwo[9][9];
+int pathOne[40];
+int pathTwo[40];
 
 
 // Encoder variables for Phase A
@@ -74,7 +77,7 @@ void setUpUltrasonic()
   //Ultrasonic set up
   pinMode(TRIGGER_PIN, OUTPUT); // Sets the TRIGGER_PIN as an Output
   pinMode(ECHO_PIN, INPUT); // Sets the ECHO_PIN as an Input
-  //Serial.println("Ultrasonic initialised");
+  //Serial3.println("Ultrasonic initialised");
 }
 
 void setUpLidars()
@@ -91,12 +94,12 @@ void setUpLidars()
   digitalWrite(LIDARTWO, HIGH);//enable lidar one 
   
   lidarOne.init();
-  //Serial.println("Lidar One initialised");
+  //Serial3.println("Lidar One initialised");
   lidarOne.configureDefault();
   lidarOne.setTimeout(500);
   
   lidarTwo.init();              //lidar one uses default address
-  //Serial.println("Lidar Two initialised");
+  //Serial3.println("Lidar Two initialised");
   lidarTwo.configureDefault();
   lidarTwo.setTimeout(500);
     
@@ -105,17 +108,17 @@ void setUpLidars()
 void setupimu() {
   pinMode(INTERRUPT_PIN, INPUT);
   imu.initialize();
-  //Serial.println(imu.testConnection() ? "IMU initialised" : "imu6050 connection failed");
+  //Serial3.println(imu.testConnection() ? "IMU initialised" : "imu6050 connection failed");
   devStatus = imu.dmpInitialize();
   
-  //Serial.println("Starting offset");
+  //Serial3.println("Starting offset");
   SetOffsets(TheOffsets);
-  //Serial.println("Offsets done");
+  //Serial3.println("Offsets done");
   
   //set up for dmp
   if (devStatus == 0) {
       // turn on the DMP, now that it's ready
-      //Serial.println(F("Enabling DMP..."));
+      //Serial3.println(F("Enabling DMP..."));
       imu.setDMPEnabled(true);
   
       // enable Arduino interrupt detection
@@ -132,7 +135,7 @@ void setupimu() {
       // 1 = initial memory load failed
       // 2 = DMP configuration updates failed
       // (if it's going to break, usually the code will be 1)
-      //Serial.print(F("DMP Initialization failed (code "));
+      //Serial3.print(F("DMP Initialization failed (code "));
   }
 }
 
@@ -541,11 +544,11 @@ void startphaseb() {
       count += 1;
       if (count == 10) {
         seen = true;
-        //Serial.println("seen");
+        //Serial3.println("seen");
       }
     } else if (seen == true) {
       ucount += 1;
-      //Serial.print("unseen");
+      //Serial3.print("unseen");
       if (ucount == 10) {
         break;
       }
@@ -555,7 +558,7 @@ void startphaseb() {
     }
     
   }
-  //Serial.println("starting");
+  //Serial3.println("starting");
   robot_start = true;
 }
 
@@ -625,7 +628,7 @@ bool gyro() {
         // reset so we can continue cleanly
         imu.resetFIFO();
         success = false;
-        //Serial.println(F("FIFO overflow!"));
+        //Serial3.println(F("FIFO overflow!"));
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
     } else if (imuIntStatus & 0x02) {
@@ -732,7 +735,7 @@ void readAndstore(short i, short j, short compassd, bool swapdir) {
   }
   distance = distance/5;
   bool L1wall = wall(distance, SIDEMAX, SIDEMIN);
-  //Serial.print("L1wall = "); Serial.println(L1wall);
+  //Serial3.print("L1wall = "); Serial3.println(L1wall);
 
   distance = 0;   //reset distance
   for (int tempa = 0; tempa !=5; tempa++) {
@@ -740,7 +743,7 @@ void readAndstore(short i, short j, short compassd, bool swapdir) {
   }
   distance = distance/5;
   bool L2wall = wall(distance, SIDEMAX, SIDEMIN);
-  //Serial.print("L2wall = "); Serial.println(L2wall);
+  //Serial3.print("L2wall = "); Serial3.println(L2wall);
   storemaze(compassd, i, j, L1wall, L2wall, ultrawall, swapdir);
 }
 
@@ -892,11 +895,11 @@ void printMaze(short initialheading, int rows_wall, int cols_wall, int goalx, in
         if(i%2 == 0 && j%2 == 1)
         {
             if(Hmap[i/2][j/2] == true)
-              Serial.print(" ---");
+              Serial3.print(" ---");
             else if (Hmap[i/2][j/2] == false)
-              Serial.print("    ");
+              Serial3.print("    ");
             else if (Hmap[i/2][j/2] == 2)
-              Serial.print(" ***");
+              Serial3.print(" ***");
         }
 
         //Add Vertical Walls
@@ -905,33 +908,76 @@ void printMaze(short initialheading, int rows_wall, int cols_wall, int goalx, in
             if (i == 1 && j == 0) 
             {
               if (initialheading == WEST)
-                Serial.print("| S "); 
+                Serial3.print("| S "); 
               else if (initialheading == SOUTH)
-                Serial.print("| S ");
+                Serial3.print("| S ");
               else
-                Serial.print("| S ");
-            } else if (i == (goalx*2 +1) && j == (goaly*2)) {
+                Serial3.print("| S ");
+            } else if (i == (tempGoalx*2 +1) && j == (tempGoaly*2)) {
               if (Vmap[i/2][j/2] == true) 
-                Serial.print("| X ");
+                Serial3.print("| X ");
               if (Vmap[i/2][j/2] == false)
-                Serial.print("  X ");  
+                Serial3.print("  X ");  
             } else if(Vmap[i/2][j/2] == true)
-              Serial.print("|   ");
+              Serial3.print("|   ");
             else if (Vmap[i/2][j/2] == false)
-              Serial.print("    ");
+              Serial3.print("    ");
             else if (Vmap[i/2][j/2] == 2)
-              Serial.print("*   ");
+              Serial3.print("*   ");
           }
     delay(10);
     }
-    Serial.println();
+    Serial3.println();
+  }
+}
+
+void printMaze2(short initialheading, int rows_wall, int cols_wall, int goalx, int goaly) {
+  for(int i = 0;i < 2*(rows_wall)+1; i++) {
+    for(int j = 0;j < 2*(cols_wall)+1 ;j++) {
+        //Add Horizontal Walls
+        if(i%2 == 0 && j%2 == 1)
+        {
+            if(Hmap2[i/2][j/2] == true)
+              Serial3.print(" ---");
+            else if (Hmap2[i/2][j/2] == false)
+              Serial3.print("    ");
+            else if (Hmap2[i/2][j/2] == 2)
+              Serial3.print(" ***");
+        }
+
+        //Add Vertical Walls
+        if(i%2 == 1 && j%2 == 0)
+        {
+            if (i == 1 && j == 0) 
+            {
+              if (initialheading == WEST)
+                Serial3.print("| S "); 
+              else if (initialheading == SOUTH)
+                Serial3.print("| S ");
+              else
+                Serial3.print("| S ");
+            } else if (i == (tempGoalx*2 +1) && j == (tempGoaly*2)) {
+              if (Vmap2[i/2][j/2] == true) 
+                Serial3.print("| X ");
+              if (Vmap2[i/2][j/2] == false)
+                Serial3.print("  X ");  
+            } else if(Vmap2[i/2][j/2] == true)
+              Serial3.print("|   ");
+            else if (Vmap2[i/2][j/2] == false)
+              Serial3.print("    ");
+            else if (Vmap2[i/2][j/2] == 2)
+              Serial3.print("*   ");
+          }
+    delay(10);
+    }
+    Serial3.println();
   }
 }
 
 
 void setup() {
   Wire.begin(); 
-  Serial.begin(9600);
+  Serial3.begin(9600);
   setUpLidars();
   setUpUltrasonic();
   setupimu();
@@ -943,7 +989,7 @@ void setup() {
   pinMode(SPEED_RUN,INPUT);
   pinMode(13,OUTPUT); 
   delay(100);
-  Serial.println("Started");
+  Serial3.println("Started");
 }
 
 // State Machine
@@ -957,7 +1003,7 @@ void loop()
 {
   switch(system_mode) {
     case(MODE_OFF):
-      Serial.println("Start Condition");
+      Serial3.println("Start Condition");
       statusGreen::write(logic_level::low);
       statusRed::write(logic_level::high); 
       resetAllEncoders(); 
@@ -972,7 +1018,7 @@ void loop()
           Vmap[a][b] = 2;
         }
       }
-      Serial.println("Starting");
+      Serial3.println("Starting");
       delay(500);
       
       system_mode = MODE_EXPLORE; 
@@ -991,18 +1037,15 @@ void loop()
       short oldi;
       short oldj;
       bool firstopen;
-      bool swapdir;
       short nextdir;
       bool sizedet;
-      int goalx;  //goal in a 9 by 9
-      int goaly;
       int moveCount;
       float distance;
       SExplored = false;
 
       //initial flood fill values
-      goalx = 5;
-      goaly = 5;
+      tempGoalx = 5;
+      tempGoaly = 5;
       compassd = 0;
       i = 0;
       j = 0;
@@ -1041,18 +1084,18 @@ void loop()
         compassd = othersp(swapdir, compassd);
         
         readAndstore(i, j, compassd, swapdir);  
-        
-        flood_fill(goalx,goaly,rows_wall, cols_wall);
+        //printMaze(1, rows_wall, cols_wall, tempGoalx, tempGoaly);
+        flood_fill(tempGoalx,tempGoaly,rows_wall, cols_wall);
         
         nextdir = findnextdir(i,j, oldi, oldj, rows_wall, cols_wall);
 
         //if you can't find a direction then redo
         while (nextdir == 5) {
           readAndstore(i,j,compassd, swapdir);
-          flood_fill(goalx,goaly, rows_wall, cols_wall);
+          flood_fill(tempGoalx,tempGoaly, rows_wall, cols_wall);
           nextdir = findnextdir(i,j,oldi,oldj, rows_wall, cols_wall);
-          //lcd.clear();
-          Serial.println("Processing...");
+          ////lcd.clear();
+          Serial3.println("Processing...");
         }
         
         //update oldi and oldj
@@ -1076,29 +1119,31 @@ void loop()
        moveRobot(compassd, nextdir, moveCount);
 
         //check if goal has been reached
-        if (i >= goalx) {
+        if (i >= tempGoalx) {
           initialheading = SOUTH;
           pheading = initialheading;
           sizedet = true;
-          Serial.println("Goal 1.1 Reached");
+          Serial3.print("Goal 1.1 Reached");
+          Serial3.print("i = "); Serial3.println(i);
+          Serial3.print("j = "); Serial3.println(j);
           //lcd.clear();
-          Serial.println("GOAL 1.1 REACHED");
           delay(1000);
           break;
-        } else if (j >= goaly) {
+        } else if (j >= tempGoaly) {
           initialheading = WEST;
           pheading = initialheading;
           sizedet = true;
-          Serial.println("Goal 1.2 Reached");
           //lcd.clear();
-          Serial.println("GOAL 1.2 REACHED");
+          Serial3.print("GOAL 1.2 REACHED");
+          Serial3.print("i = "); Serial3.println(i);
+          Serial3.print("j = "); Serial3.println(j);
           delay(1000);
           break;
         }
     }
-
-    ////lcd.clear();
-    Serial.println("---NEW GOAL---");
+    printMaze(1, rows_wall, cols_wall, tempGoalx, tempGoaly);
+    //////lcd.clear();
+    Serial3.println("---NEW GOAL---");
 
     //reset size and goal
     switch(initialheading){
@@ -1107,11 +1152,17 @@ void loop()
         cols_wall = 9;
         prows = rows_wall;
         pcols = cols_wall;
-        goalx = 2;
-        goaly = 4;
-        pgoalx = goalx;
-        pgoaly = goaly;
-
+        tempGoalx = 2;
+        tempGoaly = 4;
+        pgoalx = tempGoalx;
+        pgoaly = tempGoaly;
+  
+        for (int a =0; a <= 9; a++) {
+          for (int b =0; b <= 9; b++) {
+            Hmap2[a][b] = Hmap[a][b];
+            Vmap2[a][b] = Vmap[a][b];
+          }
+        }
         while(!SExplored) {
           
           while (!gyro()) {
@@ -1120,16 +1171,7 @@ void loop()
           }
         
           compassd = compass(); //update compass
-          tcompass = compassd; //store value into temp
-
-          if (!firstopen) { 
-            checkflip(i,j,compassd,firstopen,swapdir); 
-            if (swapdir) {
-            //flip all previous values
-            transfermap(rows_wall,cols_wall);
-            }
-          }
-        
+          tcompass = compassd; //store value into temp        
           compassd = othersp(swapdir, compassd);
           readAndstore(i, j, compassd, swapdir);  
 
@@ -1140,36 +1182,36 @@ void loop()
           //find a new goal based on unexplored arrays 
           //then feed the new goal to flood fill and head there
 
-          Serial.print("Not SExplored _ West");
+          Serial3.println("Not SExplored _ West");
           
           if (compare_path()) 
           {
             SExplored = true;
             speedRunLED(); //remove later
             system_mode = MODE_SPEEDRUN;
-            Serial.println("READY for SPEED RUN");
+            //lcd.clear();
+            Serial3.print("READY for SPEED RUN");
             break;
           } else {
-            if (i == goalx && j == goaly) 
+            if (i == tempGoalx && j == tempGoaly) 
             {
               //lcd.clear();
-              Serial.println("new goal");
-              delay(500);
-              if (goalx == pgoalx) 
+              Serial3.print("new goal");
+              if (tempGoalx == pgoalx) 
               {
-                goalx = 0;
-                goaly = 0;
+                tempGoalx = 0;
+                tempGoaly = 0;
               }
               else 
               {
-                goalx = pgoalx;
-                goaly = pgoaly;
+                tempGoalx = pgoalx;
+                tempGoaly = pgoaly;
               }
             }
           }
           
           //apply flood fill for 5 by 9
-          flood_fill(goalx,goaly, rows_wall, cols_wall);
+          flood_fill(tempGoalx,tempGoaly, rows_wall, cols_wall);
          
           //next dir to 5 by 9
           nextdir = findnextdir(i,j, oldi, oldj, rows_wall,cols_wall);
@@ -1177,10 +1219,10 @@ void loop()
           //if you can't find a direction then redo
           while (nextdir == 5) {
             readAndstore(i,j,compassd, swapdir);
-            flood_fill(goalx,goaly, rows_wall, cols_wall);
+            flood_fill(tempGoalx,tempGoaly, rows_wall, cols_wall);
             nextdir = findnextdir(i,j,oldi,oldj, rows_wall, cols_wall);
-            //lcd.clear();
-            Serial.println("Processing...1");
+            ////lcd.clear();
+            Serial3.print("Processing...1");
           }
           
           //update oldi and oldj
@@ -1209,12 +1251,12 @@ void loop()
         cols_wall = 5;
         prows = rows_wall;
         pcols = cols_wall;
-        goalx = 4;
-        goaly = 2;  
-        pgoalx = goalx;
-        pgoaly = goaly;
+        tempGoalx = 4;
+        tempGoaly = 2;  
+        pgoalx = tempGoalx;
+        pgoaly = tempGoaly;
         //lcd.clear();
-        Serial.println("South Case");
+        Serial3.print("South Case");
         delay(300);
         while(!SExplored) {
 
@@ -1224,19 +1266,11 @@ void loop()
           }
         
           compassd = compass(); //update compas
-          tcompass = compassd;
-          if (!firstopen) { 
-            checkflip(i,j,compassd,firstopen,swapdir); 
-            if (swapdir) {
-              //flip all previous values
-              transfermap(rows_wall,cols_wall);
-            }
-          }
-          
+          tcompass = compassd;          
           compassd = othersp(swapdir, compassd);
           readAndstore(i, j, compassd, swapdir);  
-          
-          Serial.print("Not SExplored _ South");
+          //lcd.clear();
+          Serial3.println("Not SExplored _ South");
 
           //compare paths
           //if explored break, if not continue exploring
@@ -1247,34 +1281,33 @@ void loop()
             SExplored = true;
             speedRunLED(); //remove later
             system_mode = MODE_SPEEDRUN;
-            Serial.println("READY for SPEED RUN");
+            //lcd.clear();
+            Serial3.println("READY for SPEED RUN");
             delay(100);
             break;
           } else {
-            if (i == goalx && j == goaly) 
+            if (i == tempGoalx && j == tempGoaly) 
             {
               //lcd.clear();
-              Serial.println("new goal");
-              delay(500);
-              if (goalx == pgoalx) 
+              Serial3.print("new goal");
+
+              if (tempGoalx == pgoalx) 
               {
-                goalx = 0;
-                goaly = 0;
+                tempGoalx = 0;
+                tempGoaly = 0;
               }
               else 
               {
-                goalx = pgoalx;
-                goaly = pgoaly;
+                tempGoalx = pgoalx;
+                tempGoaly = pgoaly;
               }
             }
           }
-          //lcd.clear();
-          Serial.println("path compared");
-          delay(200);
 
-          Serial.println("not sufficiently explored");
+          //lcd.clear();
+          Serial3.println("not sufficiently explored");
           //apply flood fill for 9 by 5
-          flood_fill(goalx,goaly, rows_wall, cols_wall);
+          flood_fill(tempGoalx,tempGoaly, rows_wall, cols_wall);
  
           //next dir to 9 by 5
           nextdir = findnextdir(i,j, oldi, oldj, rows_wall,cols_wall);
@@ -1282,9 +1315,10 @@ void loop()
          //if you can't find a direction then redo
           while (nextdir == 5) {
             readAndstore(i,j,compassd, swapdir);
-            flood_fill(goalx,goaly, rows_wall, cols_wall);
+            flood_fill(tempGoalx,tempGoaly, rows_wall, cols_wall);
             nextdir = findnextdir(i,j,oldi,oldj, rows_wall, cols_wall);
-            Serial.println("Processing...2");
+            //lcd.clear();
+            Serial3.print("Processing...2");
           }
           
           //update oldi and oldj
@@ -1351,10 +1385,18 @@ void loop()
         compassd = compass(); //update compass
 
         //path in values array will be the same as path in isolated arrays - does not prioritise straight though
-        nextdir = findnextdir(i,j, oldi, oldj, prows,pcols);
-        oldi = i;
-        oldj = j;
-        newpos(i,j,nextdir);
+        //nextdir = findnextdir(i,j, oldi, oldj, prows,pcols);
+        
+
+        //adjust direction to reflect reality
+        if (swapdir) {
+          if (nextdir == EAST) {
+            nextdir = WEST;
+          } else if (nextdir == WEST) {
+            nextdir = EAST;
+          }
+        }
+ 
         moveCount++;          //no longer needed if not using LCD
         moveRobot(compassd, nextdir, moveCount);
       }
@@ -1362,7 +1404,7 @@ void loop()
       // LED RED turns on to indicate goal is found
       statusGreen::write(logic_level::low);
       statusRed::write(logic_level::high); 
-      Serial.println("printing");
+      Serial3.println("printing");
       //printMaze(pheading, prows, pcols, pgoalx, pgoaly);
 
       system_mode = 10;
@@ -1387,72 +1429,73 @@ void newpos(short &i, short &j, short &compassd) {
 
 
 void moveRobot(short compassd, short nextdir, int moveCount) {
-  //Serial.print("compass ="); Serial.println(compassd);
+  //Serial3.print("compass ="); Serial3.println(compassd);
   if (compassd == nextdir) {
     //lcd.clear();
-    Serial.println(moveCount);
-    Serial.println("-Forward");
+    Serial3.print(moveCount);
+    Serial3.println("-Forward");
     resetAllEncoders();
     delay(50);
     robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED); //go forward one cell
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    //lcd.write("Stop");
+    lcd.write("Stop");
   } else if (nextdir - compassd == 1) {
-    //lcd.clear();
-    Serial.println(moveCount);
-    Serial.println("-Right");
+    ////lcd.clear();
+    Serial3.print(moveCount);
+    Serial3.println("-Right");
     resetAllEncoders();
     delay(50);
     robotRight();
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    //Serial.println("Stop");
+    Serial3.println("Stop");
   } else if (compassd - nextdir == 1) {
     //lcd.clear();
-    Serial.println(moveCount);
-    Serial.println("-Left");
+    Serial3.print(moveCount);
+    Serial3.println("-Left");
     resetAllEncoders();
     delay(50);
     robotLeft();
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    //Serial.println("Stop");
+    Serial3.println("Stop");
   } else if ((nextdir - compassd == 2) || (compassd - nextdir == 2)) {
     //lcd.clear();
-    Serial.println(moveCount);
-    Serial.println("-Reverse (Left)");
+    Serial3.print(moveCount);
+    Serial3.println("-Reverse (Left)");
     resetAllEncoders();
     delay(50);
     robotReverse();
     delay(50);
     resetAllEncoders();
-    //Serial.println("Stop");
+    //lcd.clear();
+    Serial3.println("Stop");
   } else if (nextdir - compassd == 3) {
     //lcd.clear();
-    Serial.println(moveCount);
-    Serial.println("-Left");
+    Serial3.print(moveCount);
+    Serial3.println("-Left");
     resetAllEncoders();
     delay(50);
     robotLeft();
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    //Serial.println("Stop");
+    Serial3.print("Stop");
   } else if (compassd - nextdir == 3) {
     //lcd.clear();
-    Serial.println(moveCount);
-    Serial.println("-Right");
+    Serial3.print(moveCount);
+    Serial3.println("-Right");
     resetAllEncoders();
     delay(50);
     robotRight();
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    //Serial.println("Stop");
+    Serial3.println("Stop");
   } 
   delay(100);
 }
@@ -1519,7 +1562,8 @@ void flood_fill(int mouseSRow, int mouseSColumn, int rows_wall, int cols_wall) {
 
 //different flood fills
 void flood_fill2(int mouseSRow, int mouseSColumn, int rows_wall, int cols_wall) {
-
+  Serial.println("printing map2");
+  printMaze2(1, rows_wall, cols_wall, tempGoalx, tempGoaly);
   int mazeValueChanged = 1;
   int CurrentExploredValue = 0;
   int N = (rows_wall*cols_wall)-1;
@@ -1579,10 +1623,20 @@ void flood_fill2(int mouseSRow, int mouseSColumn, int rows_wall, int cols_wall) 
 void printflood(int rows_wall, int cols_wall) {
   for (int i = 0; i < rows_wall; i++) {
     for (int j = 0; j < cols_wall; j++) {
-      Serial.print(values[i][j]); 
-      Serial.print("  ");
+      Serial3.print(values[i][j]); 
+      Serial3.print("  ");
     }
-    Serial.println();
+    Serial3.println();
+  }
+}
+
+void printflood2(int rows_wall, int cols_wall) {
+  for (int i = 0; i < rows_wall; i++) {
+    for (int j = 0; j < cols_wall; j++) {
+      Serial3.print(ConvertToWalls[i][j]); 
+      Serial3.print("  ");
+    }
+    Serial3.println();
   }
 }
 
@@ -1597,19 +1651,24 @@ short CurrColCheck = 0;
 short prevCurrRowCheck = 0;
 short prevCurrColCheck = 0;
 short nextdir = 5;
-
-for (int i = 0; i < prows; i++) {
-  for (int j = 0; j < pcols; j++) {
-    pathOne[i][j] = prows*pcols+1;
-  }
+int count = 0;
+for (int i = 0; i < 40; i++) {
+  pathOne[i] = 6;
 }
 
 flood_fill(pgoalx, pgoaly,prows, pcols);
 
-while (CurrRowCheck != prows && CurrColCheck != pcols) {
-  pathOne[CurrRowCheck][CurrColCheck] = values[CurrRowCheck][CurrColCheck];
+while (CurrRowCheck != tempGoalx && CurrColCheck != tempGoaly) {
+  //pathOne[CurrRowCheck][CurrColCheck] = values[CurrRowCheck][CurrColCheck];
   nextdir = findnextdir(CurrRowCheck, CurrColCheck, prevCurrRowCheck, prevCurrColCheck, prows, pcols);
+  pathOne[count] = nextdir;
+  count++;
   newpos(CurrRowCheck, CurrColCheck, nextdir);
+}
+
+Serial.println("Path 2");
+for (int i = 0; i < 40; i++) {
+  Serial.print(nextdir); 
 }
 
 }
@@ -1623,35 +1682,42 @@ for (int i = 0; i <prows+1; i++) {
     Vmap2[i][j] = Vmap[i][j];
     if (Hmap2[i][j] == 2) 
       Hmap2[i][j] = 1;
-    if (Vmap2[i][j] = 2)
+    if (Vmap2[i][j] == 2)
       Vmap2[i][j] = 1;
   }
 }
-//flood fill where unexplored is walls
-flood_fill2(pgoalx, pgoaly, prows, pcols);
+//printMaze(1, prows,pcols, tempGoalx, tempGoaly);
 
-Serial.println("path two flood fill done");
+//flood fill where unexplored is walls
+flood_fill2(tempGoalx, tempGoaly, prows, pcols);
+//printflood2(prows, pcols);
+Serial3.println("Flood 2 printed");
 
 short CurrRowCheck = 0;
 short CurrColCheck = 0;
 short prevCurrRowCheck = 0;
 short prevCurrColCheck = 0;
 short nextdir = 5;
+int count = 0;
 
-for (int i = 0; i < prows; i++) {
-  for (int j = 0; j < pcols; j++) {
-    pathTwo[i][j] = prows*pcols+1;
-  }
+for (int i = 0; i < 40; i++) {
+  pathTwo[i] = 6;
 }
-
-Serial.println("path two initialised");
 
 while (CurrRowCheck != prows && CurrColCheck != pcols) {
-  pathTwo[CurrRowCheck][CurrColCheck] = ConvertToWalls[CurrRowCheck][CurrColCheck];
+  //pathTwo[CurrRowCheck][CurrColCheck] = ConvertToWalls[CurrRowCheck][CurrColCheck];
   nextdir = findnextdir2(CurrRowCheck, CurrColCheck, prevCurrRowCheck, prevCurrColCheck, prows, pcols);
+  pathTwo[count] = nextdir;
+  count++;
   newpos(CurrRowCheck, CurrColCheck, nextdir);
+  if (nextdir == 5)
+    break;
 }
-Serial.println("path two while");
+Serial.println("Path 2");
+for (int i = 0; i < 40; i++) {
+  Serial.print(nextdir); 
+}
+
 }
 
 //returns 0 if not sufficiently explored
@@ -1662,16 +1728,21 @@ bool compare_path() {
   //update the isolated paths
   pathTwoCalc();
   pathOneCalc();
+  Serial3.println("Path One");
+  //printflood(prows, pcols);
+  ////lcd.clear();
+  Serial3.println("compare path function");
 
-  //lcd.clear();
-  Serial.println("compare path function");
   
   //compare the two paths
-  for (int i = 0; i < prows; i++) {
-    for (int j = 0; j < pcols; j++) {
-      if (pathOne[i][j] != pathTwo[i][j])
-        doneExplore = false; 
+  for (int i = 0; i<40; i++) {
+    if (pathOne[i] != pathTwo[i])
+    {
+      doneExplore = false;
+    } else {
+      doneExplore = true;
     }
   }
+  
   return doneExplore;
 }
