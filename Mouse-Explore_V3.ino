@@ -30,6 +30,7 @@ using namespace hardware;
 #define LIDAR_MAX_SETPOINT  60.0 // mm
 #define STRAIGHT_SPEED      25.0
 #define COUNT_PER_REV_TURN  1650.0  // 16 CPR * 120:1 gear ratio
+#define SPEED_OFFSET 4.00
 
 #define ROW 6  //number of row and col to print out = num of cells + 1
 #define COL 10
@@ -61,14 +62,6 @@ int ConvertToWalls[9][9];
 int pathOne[40];
 int pathTwo[40];
 
-
-// Encoder variables for Phase A
-volatile int eCountR = 0; 
-volatile int eCountL = 0; 
-volatile byte pinAcountR;
-volatile byte pinAcountL;
-boolean DirectionR = true; // Rotation direction for right motor
-boolean DirectionL = true; // Rotation direction for left motor
 
 DFRobot_LCD lcd(16,2);  //16 characters and 2 lines of show
 
@@ -161,6 +154,14 @@ float ultrasonicdist() {
 
 //--------------MOTOR CONTROL HERE----------------------
 
+// Encoder variables for Phase A
+volatile int eCountR = 0; 
+volatile int eCountL = 0; 
+volatile byte pinAcountR;
+volatile byte pinAcountL;
+boolean DirectionR = true; // Rotation direction for right motor
+boolean DirectionL = true; // Rotation direction for left motor
+
 // Control Parameters
 double error_P_lidar = 0.0;
 double error_P_encoder = 0.0;
@@ -176,7 +177,7 @@ double sumError = 0.0;
 
 //-------------------PID Parameters---------------------//
 // Constants for Lidar
-double K_p_lidar = 0.05;
+double K_p_lidar = 0.055;
 double K_d_lidar = 0.03;
 
 // Constants for Encoder
@@ -1194,7 +1195,9 @@ void loop()
             speedRunLED(); //remove later
             system_mode = MODE_SPEEDRUN;
             //lcd.clear();
+            Serial3.println("");
             Serial3.print("READY for SPEED RUN");
+            delay(50);
             break;
           } else {
             if (i == tempGoalx && j == tempGoaly) 
@@ -1216,7 +1219,6 @@ void loop()
           
           //apply flood fill for 5 by 9
           flood_fill(tempGoalx,tempGoaly, rows_wall, cols_wall);
-         
           //next dir to 5 by 9
           nextdir = findnextdir(i,j, oldi, oldj, rows_wall,cols_wall);
           
@@ -1269,7 +1271,7 @@ void loop()
             gyro();     
           }
         
-          compassd = compass(); //update compas
+          compassd = compass(); //update compass
           tcompass = compassd;          
           compassd = othersp(swapdir, compassd);
           readAndstore(i, j, compassd, swapdir);  
@@ -1324,7 +1326,8 @@ void loop()
             //lcd.clear();
             Serial3.print("Processing...2");
           }
-          
+
+          // Update position
           //update oldi and oldj
           oldi = i;
           oldj = j;
@@ -1341,7 +1344,13 @@ void loop()
           }
           compassd = tcompass;
 
+          // next direction is decided a this point (after floodfill)
+          // store into an array
+          // nextdir variable
+          
           moveCount++;
+          
+          // iterate over pathOne/pathTwo arrays for sequence from Start to End
           moveRobot(compassd, nextdir, moveCount);
         }
       break;
@@ -1359,20 +1368,23 @@ void loop()
       oldi = 0;
       oldj = 0;
       flood_fill(pgoalx,pgoaly, rows_wall, cols_wall);
-      bool startSpeed;
-      startSpeed = false;
+      
+      bool startSpeed = false;
       while(startSpeed == false) 
       {
-
+        Serial.println(digitalRead(SPEED_RUN));  
         //flick of switch to break out of loop and start the speed run  
         if (digitalRead(SPEED_RUN) == HIGH)
         {
           startSpeed = true;
           startLEDSequence(); //LED turns green to start timing of run
+          moveCount = 0;
+          Serial3.println("SPEED RUN STARTING");
           break;
         }
         statusGreen::write(logic_level::low);
-        statusRed::write(logic_level::high);       
+        statusRed::write(logic_level::high);    
+        delay(100);   
       }
 
       // make a finalised path array that you go through
@@ -1380,35 +1392,47 @@ void loop()
       
       while(!goal) 
       {
-        if (i == pgoalx && j == pgoaly) 
-        {
-          goal = true;
-          break;  
-        }
+        // If robot reaches goal in shortest path after speed run
+        // is completed
+        //if (i == pgoalx && j == pgoaly) 
+        //{
+        //  goal = true;
+        //  break;  
+        //}
+
+        // if not at goal (during speedrun)
         
         compassd = compass(); //update compass
 
         //path in values array will be the same as path in isolated arrays - does not prioritise straight though
-        //nextdir = findnextdir(i,j, oldi, oldj, prows,pcols);
-        
+        //nextdir = findnextdir(i,j, oldi, oldj, prows,pcols);        
+
+        // Iterate over pathTwo sequence 
 
         //adjust direction to reflect reality
         if (swapdir) {
-          if (nextdir == EAST) {
-            nextdir = WEST;
-          } else if (nextdir == WEST) {
-            nextdir = EAST;
+          if (pathTwo[moveCount] == EAST) {
+            pathTwo[moveCount] = WEST;
+          } else if (pathTwo[moveCount] == WEST) {
+            pathTwo[moveCount] = EAST;
           }
-        }
- 
-        moveCount++;          //no longer needed if not using LCD
-        moveRobot(compassd, nextdir, moveCount);
+        } 
+        
+        // (as it is presumable the shortest path after sufficient exploration)
+        Serial.print(nextdir); Serial.println(" ");
+        moveRobot(compassd, pathTwo[moveCount], moveCount);
+        
+        //increment to next dir that was found from floodfill
+        moveCount++;
+
+        goal = true; //at end of sequence should be at goal anyway.
+        break; //end LED sequence
       }
       
-      // LED RED turns on to indicate goal is found
+      // LED RED turns on to indicate goal is reached (for speed run - Explore)
       statusGreen::write(logic_level::low);
       statusRed::write(logic_level::high); 
-      Serial3.println("printing");
+      //Serial3.println("printing");
       //printMaze(pheading, prows, pcols, pgoalx, pgoaly);
 
       system_mode = 10;
@@ -1436,7 +1460,7 @@ void moveRobot(short compassd, short nextdir, int moveCount) {
   //Serial3.print("compass ="); Serial3.println(compassd);
   if (compassd == nextdir) {
     //lcd.clear();
-    Serial3.print(moveCount);
+    //Serial3.print(moveCount);
     Serial3.println("-Forward");
     resetAllEncoders();
     delay(200);
@@ -1444,10 +1468,9 @@ void moveRobot(short compassd, short nextdir, int moveCount) {
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    lcd.write("Stop");
   } else if (nextdir - compassd == 1) {
     ////lcd.clear();
-    Serial3.print(moveCount);
+    //Serial3.print(moveCount);
     Serial3.println("-Right");
     resetAllEncoders();
     delay(50);
@@ -1455,10 +1478,10 @@ void moveRobot(short compassd, short nextdir, int moveCount) {
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    Serial3.println("Stop");
+   // Serial3.println("Stop");
   } else if (compassd - nextdir == 1) {
     //lcd.clear();
-    Serial3.print(moveCount);
+    //Serial3.print(moveCount);
     Serial3.println("-Left");
     resetAllEncoders();
     delay(50);
@@ -1466,10 +1489,10 @@ void moveRobot(short compassd, short nextdir, int moveCount) {
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    Serial3.println("Stop");
+    //Serial3.println("Stop");
   } else if ((nextdir - compassd == 2) || (compassd - nextdir == 2)) {
     //lcd.clear();
-    Serial3.print(moveCount);
+    //Serial3.print(moveCount);
     Serial3.println("-Reverse (Left)");
     resetAllEncoders();
     delay(50);
@@ -1477,10 +1500,10 @@ void moveRobot(short compassd, short nextdir, int moveCount) {
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    Serial3.println("Stop");
+    //Serial3.println("Stop");
   } else if (nextdir - compassd == 3) {
     //lcd.clear();
-    Serial3.print(moveCount);
+    //Serial3.print(moveCount);
     Serial3.println("-Left");
     resetAllEncoders();
     delay(50);
@@ -1488,10 +1511,10 @@ void moveRobot(short compassd, short nextdir, int moveCount) {
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    Serial3.print("Stop");
+    //Serial3.print("Stop");
   } else if (compassd - nextdir == 3) {
     //lcd.clear();
-    Serial3.print(moveCount);
+    //Serial3.print(moveCount);
     Serial3.println("-Right");
     resetAllEncoders();
     delay(50);
@@ -1499,7 +1522,7 @@ void moveRobot(short compassd, short nextdir, int moveCount) {
     delay(50);
     resetAllEncoders();
     //lcd.clear();
-    Serial3.println("Stop");
+    //Serial3.println("Stop");
   } 
   delay(100);
 }
@@ -1664,17 +1687,18 @@ flood_fill(pgoalx, pgoaly,prows, pcols);
 
 while (CurrRowCheck != tempGoalx && CurrColCheck != tempGoaly) {
   //pathOne[CurrRowCheck][CurrColCheck] = values[CurrRowCheck][CurrColCheck];
+  // might be issue with next dir
   nextdir = findnextdir(CurrRowCheck, CurrColCheck, prevCurrRowCheck, prevCurrColCheck, prows, pcols);
   pathOne[count] = nextdir;
   count++;
   newpos(CurrRowCheck, CurrColCheck, nextdir);
 }
 
-Serial.println("Path 2");
-for (int i = 0; i < 40; i++) {
-  Serial.print(nextdir); 
+Serial3.println("Path 1");
+for (int t = 0; t < 40; t++) {
+  Serial3.print(pathOne[t]);
 }
-
+Serial3.println("");
 }
 
 //isolate second path where unexplored is walls
@@ -1693,8 +1717,8 @@ for (int i = 0; i <prows+1; i++) {
 //printMaze(1, prows,pcols, tempGoalx, tempGoaly);
 
 //flood fill where unexplored is walls
-flood_fill2(tempGoalx, tempGoaly, prows, pcols);
-//printflood2(prows, pcols);
+flood_fill2(pgoalx, pgoaly, prows, pcols);
+printflood2(prows, pcols);
 Serial3.println("Flood 2 printed");
 
 short CurrRowCheck = 0;
@@ -1717,36 +1741,37 @@ while (CurrRowCheck != prows && CurrColCheck != pcols) {
   if (nextdir == 5)
     break;
 }
-Serial.println("Path 2");
-for (int i = 0; i < 40; i++) {
-  Serial.print(nextdir); 
+Serial3.println("Path 2");
+for (int w = 0; w < 40; w++) {
+  Serial3.print(pathTwo[w]); 
 }
+Serial3.println("");
 
 }
 
 //returns 0 if not sufficiently explored
 //returns 1 if exploring is done
 bool compare_path() {
+  
   bool doneExplore = true;
 
   //update the isolated paths
-  pathTwoCalc();
   pathOneCalc();
-  Serial3.println("Path One");
-  //printflood(prows, pcols);
+  pathTwoCalc();
+  //Serial3.println("Path One");
+  printflood(prows, pcols);
   ////lcd.clear();
-  Serial3.println("compare path function");
-
+  Serial3.println("Comparing Path Function Check");
   
   //compare the two paths
   for (int i = 0; i<40; i++) {
     if (pathOne[i] != pathTwo[i])
     {
-      doneExplore = false;
-    } else {
-      doneExplore = true;
+      doneExplore = false; //lower flag
     }
   }
+  
+  Serial.println("");
   
   return doneExplore;
 }
