@@ -39,14 +39,16 @@ Horizontal
 using namespace hardware;
 
 // Motor/Wheel parameters
-#define COUNT_PER_REV       1650.0  // 16 CPR * 120:1 gear ratio
-#define COUNT_PER_REV_TURN  1450.0  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV       1650.0  // 16 CPR * 120:1 gear ratio (for straight)
+#define COUNT_PER_REV_TURN  1650.0  // 16 CPR * 120:1 gear ratio
 
 #define CIRCUM              240.0 // mm
 #define CELL_LENGTH         250.0 // mm
 #define STRAIGHT_DISTANCE   200.0 // mm
 #define LIDAR_MAX_SETPOINT  100.0 // mm
+
 #define STRAIGHT_SPEED      25.0
+#define SPEED_OFFSET 4.0
 
 // Isolated Test Defines (toggle ON.OFF) -> For Phase B
 #define TEST_MOVE_CENTRES
@@ -81,6 +83,8 @@ void setUpLidars()
 
 }
 
+//--------------MOTOR CONTROL HERE----------------------
+
 // Control Parameters
 double error_P_lidar = 0.0;
 double error_P_encoder = 0.0;
@@ -94,13 +98,16 @@ double prev_error_lidar = 0.0;
 double totalError = 0.0;
 double sumError = 0.0;
 
-// Encoder variables for Phase A
-volatile int eCountR = 0; 
-volatile int eCountL = 0; 
-volatile byte pinAcountR;
-volatile byte pinAcountL;
-boolean DirectionR = true; // Rotation direction for right motor
-boolean DirectionL = true; // Rotation direction for left motor
+//-------------------PID Parameters---------------------//
+// Constants for Lidar
+double K_p_lidar = 0.03;
+double K_d_lidar = 0.02;
+
+// Constants for Encoder
+double K_p_encoder = 0.065;
+double K_d_encoder = 0.03;
+double K_i_encoder = 0.01;
+//-----------------------------------------------------//
 
 // Motor variables (to match hardware_definitions.h)
 int leftEnableDC = 10; //pwm
@@ -138,16 +145,12 @@ void motorControl(int pin1,int pin2,float percRight,float percLeft)
   }
 }
 
-//-------------------PID Parameters---------------------//
-// Constants for Lidar
-double K_p_lidar = 0.03;
-double K_d_lidar = 0.00;
-
-// Constants for Encoder
-double K_p_encoder = 0.03;
-double K_d_encoder = 0.03;
-double K_i_encoder = 0.012;
-//------------------------------------------------------//
+void resetAllEncoders()
+{
+  eCountL = 0;
+  eCountR = 0;
+  delay(10);
+}
 
 void robotForward(float distance, float setSpeedPerc)
 {
@@ -162,7 +165,7 @@ void robotForward(float distance, float setSpeedPerc)
   float prevlCount, prevrCount;
  
   // Bias - variable used to offset motor power on right vs left to keep straight.
-  double offset = 0.12;  // offset amount to compensate Right vs. Left drive
+  double offset = 0.25;  // offset amount to compensate Right vs. Left drive
 
   numRev = distance / CIRCUM;  // calculate the target # of rotations
   targetCount = numRev * (COUNT_PER_REV);    // calculate the target count
@@ -174,19 +177,23 @@ void robotForward(float distance, float setSpeedPerc)
 
   motorControl(1,0,rightPWM,leftPWM);
 
-  while (abs(eCountL) < targetCount)
+  while (abs(eCountR) < targetCount)
   {
-    motorControl(1,0,rightPWM,leftPWM);
+    motorControl(1,0,rightPWM,leftPWM+offset);
 
     // Error count from encoder 'ticks'
-    lDiff = (abs(eCountL) - prevlCount)/2;
-    rDiff = (abs(eCountR) - prevrCount)/2;
+    lDiff = (abs(eCountL) - prevlCount);
+    rDiff = (abs(eCountR) - prevrCount);
 
     // Have walls on either side (Part 3 of Phase B)
     // L1 = 65. L2 = 45. Bias = 15
-    if (using_lidar == true)
+    // L1 = RIGHT and L2 = LEFT
+    //if (use_lidar == true)
+    // readings around 
+
+    if ((lidarOne.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT && lidarTwo.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT))
     {
-        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 15.0);
+        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 2.0);
         error_D_lidar = error_P_lidar - prev_error_lidar;
   
         //K_p and K_d (for lidar)  
@@ -195,8 +202,8 @@ void robotForward(float distance, float setSpeedPerc)
   
         if (lidarOne.readRangeSingleMillimeters() > lidarTwo.readRangeSingleMillimeters())
         {
-          leftPWM -= 2.0;
-          rightPWM += 2.0;
+          leftPWM += totalError;
+          rightPWM -= totalError;
 
           if (leftPWM > setSpeedPerc || rightPWM > setSpeedPerc)
           {
@@ -206,8 +213,8 @@ void robotForward(float distance, float setSpeedPerc)
         }
         else if (lidarOne.readRangeSingleMillimeters() < lidarTwo.readRangeSingleMillimeters())
         {
-          leftPWM += 2.0;
-          rightPWM -= 2.0;
+          leftPWM -= totalError;
+          rightPWM += totalError;
 
           if (leftPWM >= setSpeedPerc || rightPWM >= setSpeedPerc)
           {
@@ -216,9 +223,9 @@ void robotForward(float distance, float setSpeedPerc)
           }
         }     
      }
-    // If no wall on either side
-    else
-    {
+
+    else {
+      
       double e_error = (lDiff - rDiff); //encoder error between left and right wheel
       sumError += e_error;      
       double dError = (lDiff - rDiff) - prev_error_encoder;
@@ -226,21 +233,23 @@ void robotForward(float distance, float setSpeedPerc)
       totalError = (K_p_encoder * e_error) - (K_d_encoder * setSpeedPerc) + 
       (K_i_encoder * sumError);
 
-      leftPWM += totalError/3;  
-      rightPWM -= totalError/3;
-
-      if (leftPWM >= setSpeedPerc || rightPWM >= setSpeedPerc)
+      // Adjust speed just on encoder   
+      leftPWM += totalError;  
+      rightPWM -= totalError;
+  
+      if (leftPWM >= setSpeedPerc + SPEED_OFFSET || rightPWM >= setSpeedPerc + SPEED_OFFSET)
       {
-        leftPWM = setSpeedPerc;
-        rightPWM = setSpeedPerc; 
+        leftPWM = setSpeedPerc + SPEED_OFFSET;
+        rightPWM = setSpeedPerc + SPEED_OFFSET; 
       }
 
-      prev_error_lidar = e_error; //store previous error for next cycle-        
+      prev_error_lidar = e_error; //store previous error for next cycle-    
+
+    }
       // Store previous count  
       prevlCount = abs(eCountL);
       prevrCount = abs(eCountR);
-    }
-  }
+  }    
   robotStop();
   delay(10);
   resetAllEncoders();
@@ -256,7 +265,7 @@ void robotStop()
 void robotTurn(int directionVal)
 {
 
-  float setSpeedPerc = 30.0;
+  float setSpeedPerc = 25.0;
 
   resetEncoderR();
   resetEncoderL();
@@ -267,7 +276,7 @@ void robotTurn(int directionVal)
 
     while (abs(eCountR) <= COUNT_PER_REV_TURN/3.50)
     {
-      motorControl(0,0,setSpeedPerc,setSpeedPerc);    
+      motorControl(1,1,setSpeedPerc,setSpeedPerc);    
     }
     
     resetEncoderR();
@@ -276,14 +285,14 @@ void robotTurn(int directionVal)
     delay(200);
   }
 
-  else //directionVal is 0
+  else
   {
     //-ve so turn to right (CW)
     //Right - and Left +
 
-    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.10)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.9)
     {
-      motorControl(1,1,setSpeedPerc,setSpeedPerc);  
+      motorControl(0,0,setSpeedPerc,setSpeedPerc);  
     }
 
   resetEncoderR();
@@ -291,7 +300,45 @@ void robotTurn(int directionVal)
   robotStop();    
   delay(200); 
   }  
+  delay(50);
 }
+
+void robotLeft()
+{
+  resetAllEncoders();   
+  robotTurn(0); //turn CCW on spot
+  resetAllEncoders();
+  delay(200);
+  robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED); //go forward on cell
+  resetAllEncoders();  
+  delay(100);
+}
+
+void robotRight()
+{
+  resetAllEncoders();
+  robotTurn(1); //turn CW on spot
+  resetAllEncoders();
+  delay(200);
+  robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED); //go forward one cell
+  resetAllEncoders();  
+  delay(100);
+}
+
+void robotReverse() {
+  resetAllEncoders();
+  robotTurn(1); //turn CW on spot
+  delay(250);
+  resetAllEncoders();
+  robotTurn(1);
+  resetAllEncoders();
+  delay(250);
+  robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED); //go forward one cell
+  delay(250);
+  resetAllEncoders();
+}
+
+//--------------MOTOR CONTROL HERE----------------------
 
 // ISR for encoder interrupt at Right Motor
 void encoderCountR()
@@ -517,9 +564,14 @@ void setup() {
   setupMotor(); 
   setupEncoderWheel(); 
 
+  // LED Green ON after maze is received and processed
+  statusGreen::write(logic_level::low);
+  statusRed::write(logic_level::high); 
+  resetAllEncoders(); 
+
   //GOOD
   //get maze layout
-  Get_Maze_Layout();
+  //Get_Maze_Layout();
   
   //GOOD
   //get intial mouse direction
@@ -531,10 +583,10 @@ void setup() {
 
   //GOOD
   //carry out flood fill on maze
-  //flood_fill();
+  flood_fill();
 
   //print maze
-  //Print_Maze();
+  Print_Maze();
 
   digitalWrite(13,LOW);
 }
@@ -1074,7 +1126,7 @@ void flood_fill(){
 }
 
 // Parameters for Robot to act on Floodfill algorithm results
-#define MAX_INPUT 45
+#define MAX_INPUT 90
 char robotMovements[MAX_INPUT];
 char moveChar;
 int move_i = 0;
@@ -1185,7 +1237,8 @@ void loop()
      
   // Interpret commands/direction sequence (for Robot actuation)  
   
-  Serial3.println("--COMMANDS READY--");
+  Serial.println("--COMMANDS READY--");
+  startLEDSequence();
           
   // Iterate through command Array
   for (int i = 0; i < MAX_INPUT; i++)
@@ -1197,24 +1250,27 @@ void loop()
       case('^'):
         Serial.print("^");   
         resetAllEncoders();
-        delay(50);
+        delay(250);
         robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED);
+        delay(250);
         resetAllEncoders();
         break;
     
       case('>'):
         Serial.print(">");
         resetAllEncoders();
-        delay(50);
+        delay(250);
         robotTurn(1);
+        delay(250);
         resetAllEncoders();        
         break;
     
       case('<'):        
         Serial.print("<");
         resetAllEncoders();
-        delay(50);
+        delay(250);
         robotTurn(0);
+        delay(250);
         resetAllEncoders();        
         break;
                 
@@ -1222,5 +1278,13 @@ void loop()
        break;
     }
     delay(50);             
-  }   
+  }
+
+  // Once at goal and speed run completed
+  while (true)
+  {
+    // LED Green ON after maze is received and processed
+    statusGreen::write(logic_level::low);
+    statusRed::write(logic_level::high); 
+  }
 }
