@@ -39,23 +39,16 @@ Horizontal
 using namespace hardware;
 
 // Motor/Wheel parameters
-#define COUNT_PER_REV       1650.0  // 16 CPR * 120:1 gear ratio (for straight)
+#define COUNT_PER_REV       1700.0  // 16 CPR * 120:1 gear ratio (for straight)
 #define COUNT_PER_REV_TURN  1650.0  // 16 CPR * 120:1 gear ratio
 
 #define CIRCUM              240.0 // mm
 #define CELL_LENGTH         250.0 // mm
 #define STRAIGHT_DISTANCE   200.0 // mm
-#define LIDAR_MAX_SETPOINT  100.0 // mm
+#define LIDAR_MAX_SETPOINT  65.0 // mm
 
-#define STRAIGHT_SPEED      25.0
-#define SPEED_OFFSET 4.0
-
-// Isolated Test Defines (toggle ON.OFF) -> For Phase B
-#define TEST_MOVE_CENTRES
-#define TEST_SPOT_TURN
-#define TEST_STRAIGHT
-#define TEST_SQUARE_WAVE
-#define TEST_AUTO
+#define STRAIGHT_SPEED 35.0
+#define SPEED_OFFSET 2.0
 
 bool using_lidar = false;
 
@@ -100,8 +93,8 @@ double sumError = 0.0;
 
 //-------------------PID Parameters---------------------//
 // Constants for Lidar
-double K_p_lidar = 0.03;
-double K_d_lidar = 0.02;
+double K_p_lidar = 0.08;
+double K_d_lidar = 0.03;
 
 // Constants for Encoder
 double K_p_encoder = 0.065;
@@ -116,6 +109,14 @@ int in1 = 9; //digital
 int in2 = 8; //digital
 int in3 = 12; //digital
 int in4 = 13; //digital
+
+// Encoder variables for Phase A
+volatile int eCountR = 0; 
+volatile int eCountL = 0; 
+volatile byte pinAcountR;
+volatile byte pinAcountL;
+boolean DirectionR = true; // Rotation direction for right motor
+boolean DirectionL = true; // Rotation direction for left motor
 
 //function for the motor controller
 void motorControl(int pin1,int pin2,float percRight,float percLeft)
@@ -290,7 +291,7 @@ void robotTurn(int directionVal)
     //-ve so turn to right (CW)
     //Right - and Left +
 
-    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.9)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.85)
     {
       motorControl(0,0,setSpeedPerc,setSpeedPerc);  
     }
@@ -301,41 +302,6 @@ void robotTurn(int directionVal)
   delay(200); 
   }  
   delay(50);
-}
-
-void robotLeft()
-{
-  resetAllEncoders();   
-  robotTurn(0); //turn CCW on spot
-  resetAllEncoders();
-  delay(200);
-  robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED); //go forward on cell
-  resetAllEncoders();  
-  delay(100);
-}
-
-void robotRight()
-{
-  resetAllEncoders();
-  robotTurn(1); //turn CW on spot
-  resetAllEncoders();
-  delay(200);
-  robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED); //go forward one cell
-  resetAllEncoders();  
-  delay(100);
-}
-
-void robotReverse() {
-  resetAllEncoders();
-  robotTurn(1); //turn CW on spot
-  delay(250);
-  resetAllEncoders();
-  robotTurn(1);
-  resetAllEncoders();
-  delay(250);
-  robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED); //go forward one cell
-  delay(250);
-  resetAllEncoders();
 }
 
 //--------------MOTOR CONTROL HERE----------------------
@@ -400,13 +366,6 @@ void resetEncoderR()
 void resetEncoderL()
 {
   eCountL = 0;
-}
-
-void resetAllEncoders()
-{
-  eCountL = 0;
-  eCountR = 0;
-  delay(10);
 }
 
 void setupDigitalPins()
@@ -571,15 +530,15 @@ void setup() {
 
   //GOOD
   //get maze layout
-  //Get_Maze_Layout();
+  Get_Maze_Layout();
   
   //GOOD
   //get intial mouse direction
-  //Get_Dir();
+  Get_Dir();
   
   //GOOD
   //get initial starting position
-  //Get_Start();
+  Get_Start();
 
   //GOOD
   //carry out flood fill on maze
@@ -1146,6 +1105,8 @@ void loop()
 //    }
 // }
 
+     
+
      for (int k = Max_Value_Goal; k >= 0; k--)
      {      
           if(commandArray[k] == 'N'){
@@ -1250,27 +1211,27 @@ void loop()
       case('^'):
         Serial.print("^");   
         resetAllEncoders();
-        delay(250);
+        delay(200);
         robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED);
-        delay(250);
+        delay(100);
         resetAllEncoders();
         break;
     
       case('>'):
         Serial.print(">");
         resetAllEncoders();
-        delay(250);
+        delay(200);
         robotTurn(1);
-        delay(250);
+        delay(100);
         resetAllEncoders();        
         break;
     
       case('<'):        
         Serial.print("<");
         resetAllEncoders();
-        delay(250);
+        delay(200);
         robotTurn(0);
-        delay(250);
+        delay(100);
         resetAllEncoders();        
         break;
                 
