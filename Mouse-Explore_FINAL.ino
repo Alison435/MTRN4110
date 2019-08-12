@@ -55,7 +55,7 @@ int pgoalx;
 int pgoaly;
 int tempGoalx;
 int tempGoaly;
-bool SExplored;
+bool SExplored = false;
 bool swapdir;
 
 //global cases for flood fill map
@@ -409,7 +409,7 @@ void robotLeftSpeed()
   resetAllEncoders();   
   robotTurn(0); //turn CCW on spot
   resetAllEncoders();
-  delay(200);
+  delay(100);
   robotForward(SPEEDRUN_DISTANCE,SPEEDRUN_SPEED); //go forward on cell
   resetAllEncoders();  
   delay(100);
@@ -420,7 +420,7 @@ void robotRightSpeed()
   resetAllEncoders();
   robotTurn(1); //turn CW on spot
   resetAllEncoders();
-  delay(200);
+  delay(100);
   robotForward(SPEEDRUN_DISTANCE,SPEEDRUN_SPEED); //go forward one cell
   resetAllEncoders();  
   delay(100);
@@ -429,13 +429,13 @@ void robotRightSpeed()
 void robotReverse() {
   resetAllEncoders();
   robotTurn(1); //turn CW on spot
-  delay(250);
+  delay(200);
   resetAllEncoders();
   robotTurn(1);
   resetAllEncoders();
-  delay(250);
+  delay(200);
   robotForward(STRAIGHT_DISTANCE,STRAIGHT_SPEED); //go forward one cell
-  delay(250);
+  delay(200);
   resetAllEncoders();
 }
 
@@ -1038,6 +1038,17 @@ void loop()
       resetAllEncoders(); 
       
       startphaseb();
+
+      // after sufficient exploration, ready for speed run mode
+      // not explore mode
+      if (SExplored == true)
+      {
+        system_mode = MODE_SPEEDRUN;
+        delay(15);
+        break;
+      }
+      //else
+      
       statusGreen::write(logic_level::high);
       statusRed::write(logic_level::low);
       //filling up wall maps
@@ -1216,12 +1227,11 @@ void loop()
           if (compare_path()) 
           {
             SExplored = true;
-            speedRunLED(); //remove later
-            system_mode = MODE_SPEEDRUN;
             //lcd.clear();
             Serial3.println("");
             Serial3.println("READY for SPEED RUN");
-            delay(100);
+            delay(15);
+            system_mode = MODE_OFF;
             break;
           } else {
             if (i == tempGoalx && j == tempGoaly) 
@@ -1309,11 +1319,9 @@ void loop()
           if (compare_path()) 
           {
             SExplored = true;
-            speedRunLED(); //remove later
-            system_mode = MODE_SPEEDRUN;
-            //lcd.clear();
             Serial3.println("READY for SPEED RUN");
-            delay(100);
+            delay(15);
+            system_mode = MODE_OFF;
             break;
           } else {
             if (i == tempGoalx && j == tempGoaly) 
@@ -1393,25 +1401,6 @@ void loop()
       oldj = 0;
       flood_fill(pgoalx,pgoaly, rows_wall, cols_wall);
       
-      bool startSpeed = false;
-      while(startSpeed == false) 
-      {
-        Serial.println(digitalRead(SPEED_RUN));  
-        //flick of switch to break out of loop and start the speed run  
-        if (digitalRead(SPEED_RUN) == HIGH)
-        {
-          startSpeed = true;
-          moveCount = 0;
-          Serial3.println("WAIT 15 SEC >>> SPEED RUN"); //need resistor for pull down
-          delay(15000);
-          startLEDSequence(); //LED turns green to start timing of run
-          break;
-        }
-        statusGreen::write(logic_level::low);
-        statusRed::write(logic_level::high);    
-        delay(100);   
-      }
-
       // make a finalised path array that you go through
       // TODO: MAKE RobotMove()
       
