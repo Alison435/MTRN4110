@@ -26,12 +26,12 @@ using namespace hardware;
 // Motor/Wheel parameters
 #define COUNT_PER_REV       1500.0  // 16 CPR * 120:1 gear ratio
 #define CIRCUM              240.0 // mm
-#define STRAIGHT_DISTANCE   200.0 // mm
-#define LIDAR_MAX_SETPOINT  100.0 // mm
+#define STRAIGHT_DISTANCE   195.0 // mm
+#define LIDAR_MAX_SETPOINT  85.0 // mm
 #define STRAIGHT_SPEED      25.0
 #define SPEEDRUN_SPEED      25.0
 #define SPEEDRUN_DISTANCE   200.0
-#define COUNT_PER_REV_TURN  1650.0  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV_TURN  1600.0  // 16 CPR * 120:1 gear ratio
 #define SPEED_OFFSET 5.00 //straight (with no lidar control)
 #define L_SPEED_OFFSET 6.0
 #define RIGHT_WALL 50.0
@@ -182,7 +182,7 @@ double sumError = 0.0;
 //-------------------PID Parameters---------------------//
 // Constants for Lidar
 double K_p_lidar = 1.25;
-double K_d_lidar = 0.35;
+double K_d_lidar = 0.5;
 
 // Constants for Encoder
 double K_p_encoder = 0.07;
@@ -436,7 +436,7 @@ void robotTurn(int directionVal)
   {
     //Right + and Left -
 
-    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.60)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.70)
     {
       motorControl(1,1,setSpeedPerc,setSpeedPerc);    
     }
@@ -452,7 +452,7 @@ void robotTurn(int directionVal)
     //-ve so turn to right (CW)
     //Right - and Left +
 
-    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.90)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.65)
     {
       motorControl(0,0,setSpeedPerc,setSpeedPerc);  
     }
