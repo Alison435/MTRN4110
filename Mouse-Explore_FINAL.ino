@@ -24,15 +24,16 @@
 using namespace hardware;
 
 // Motor/Wheel parameters
-#define COUNT_PER_REV       1650.0  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV       1400.0  // 16 CPR * 120:1 gear ratio
 #define CIRCUM              240.0 // mm
-#define STRAIGHT_DISTANCE   200.0 // mm
-#define LIDAR_MAX_SETPOINT  60.0 // mm
-#define STRAIGHT_SPEED      25.0
-#define SPEEDRUN_SPEED      35.0
-#define SPEEDRUN_DISTANCE  190.0
+#define STRAIGHT_DISTANCE   160.0 // mm
+#define LIDAR_MAX_SETPOINT  100.0 // mm
+#define STRAIGHT_SPEED      15.0
+#define SPEEDRUN_SPEED      25.0
+#define SPEEDRUN_DISTANCE   190.0
 #define COUNT_PER_REV_TURN  1650.0  // 16 CPR * 120:1 gear ratio
-#define SPEED_OFFSET 4.00
+#define SPEED_OFFSET 4.00 //straight (with no lidar control)
+#define L_SPEED_OFFSET 10.0
 
 #define ROW 6  //number of row and col to print out = num of cells + 1
 #define COL 10
@@ -63,7 +64,6 @@ int values[9][9];
 int ConvertToWalls[9][9];
 int pathOne[40];
 int pathTwo[40];
-
 
 DFRobot_LCD lcd(16,2);  //16 characters and 2 lines of show
 
@@ -179,11 +179,11 @@ double sumError = 0.0;
 
 //-------------------PID Parameters---------------------//
 // Constants for Lidar
-double K_p_lidar = 0.08;
-double K_d_lidar = 0.03;
+double K_p_lidar = 0.8;
+double K_d_lidar = 0.05;
 
 // Constants for Encoder
-double K_p_encoder = 0.065;
+double K_p_encoder = 0.07;
 double K_d_encoder = 0.03;
 double K_i_encoder = 0.01;
 //-----------------------------------------------------//
@@ -258,49 +258,51 @@ void robotForward(float distance, float setSpeedPerc)
 
   while (abs(eCountR) < targetCount)
   {
-    motorControl(1,0,rightPWM,leftPWM+offset);
+    motorControl(1,0,rightPWM,leftPWM);
 
     // Error count from encoder 'ticks'
     lDiff = (abs(eCountL) - prevlCount);
     rDiff = (abs(eCountR) - prevrCount);
 
     // Have walls on either side (Part 3 of Phase B)
-    // L1 = 65. L2 = 45. Bias = 15
+    // L1 = 70. L2 = 60. Bias = 10
     // L1 = RIGHT and L2 = LEFT
     //if (use_lidar == true)
     // readings around 
 
     if ((lidarOne.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT && lidarTwo.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT))
     {
-        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 2.0);
+        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 5.0);
         error_D_lidar = error_P_lidar - prev_error_lidar;
   
         //K_p and K_d (for lidar)  
         totalError = (K_p_lidar * error_P_lidar) + (K_d_lidar * error_D_lidar);
         prev_error_lidar = error_P_lidar;
-  
+
+        // left of a cell
         if (lidarOne.readRangeSingleMillimeters() > lidarTwo.readRangeSingleMillimeters())
         {
-          leftPWM += totalError;
-          rightPWM -= totalError;
+            leftPWM += totalError;
+            rightPWM -= totalError;
 
-          if (leftPWM > setSpeedPerc || rightPWM > setSpeedPerc)
-          {
-            leftPWM = setSpeedPerc;
-            rightPWM = setSpeedPerc; 
+          if (leftPWM > setSpeedPerc + L_SPEED_OFFSET || rightPWM > setSpeedPerc + L_SPEED_OFFSET)
+          { 
+            leftPWM = setSpeedPerc + L_SPEED_OFFSET*1.25;
+            rightPWM = setSpeedPerc + L_SPEED_OFFSET*1.25; 
           }
         }
+        //right of a cell
         else if (lidarOne.readRangeSingleMillimeters() < lidarTwo.readRangeSingleMillimeters())
         {
-          leftPWM -= totalError;
-          rightPWM += totalError;
+            leftPWM -= totalError;
+            rightPWM += totalError;
 
-          if (leftPWM >= setSpeedPerc || rightPWM >= setSpeedPerc)
+          if (leftPWM >= setSpeedPerc + L_SPEED_OFFSET || rightPWM >= setSpeedPerc + L_SPEED_OFFSET)
           {
-            leftPWM = setSpeedPerc;
-            rightPWM = setSpeedPerc; 
+            leftPWM = setSpeedPerc + L_SPEED_OFFSET*2.5;
+            rightPWM = setSpeedPerc + L_SPEED_OFFSET*2.5; 
           }
-        }     
+        }    
      }
 
     else {
@@ -353,7 +355,7 @@ void robotTurn(int directionVal)
   {
     //Right + and Left -
 
-    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.50)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.55)
     {
       motorControl(1,1,setSpeedPerc,setSpeedPerc);    
     }
@@ -369,7 +371,7 @@ void robotTurn(int directionVal)
     //-ve so turn to right (CW)
     //Right - and Left +
 
-    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.85)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.80)
     {
       motorControl(0,0,setSpeedPerc,setSpeedPerc);  
     }
@@ -1044,7 +1046,7 @@ void loop()
       if (SExplored == true)
       {
         system_mode = MODE_SPEEDRUN;
-        delay(15);
+        delay(3000);
         break;
       }
       //else
