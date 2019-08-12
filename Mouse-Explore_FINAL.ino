@@ -24,16 +24,18 @@
 using namespace hardware;
 
 // Motor/Wheel parameters
-#define COUNT_PER_REV       1400.0  // 16 CPR * 120:1 gear ratio
+#define COUNT_PER_REV       1500.0  // 16 CPR * 120:1 gear ratio
 #define CIRCUM              240.0 // mm
-#define STRAIGHT_DISTANCE   160.0 // mm
+#define STRAIGHT_DISTANCE   200.0 // mm
 #define LIDAR_MAX_SETPOINT  100.0 // mm
-#define STRAIGHT_SPEED      15.0
+#define STRAIGHT_SPEED      25.0
 #define SPEEDRUN_SPEED      25.0
-#define SPEEDRUN_DISTANCE   190.0
+#define SPEEDRUN_DISTANCE   200.0
 #define COUNT_PER_REV_TURN  1650.0  // 16 CPR * 120:1 gear ratio
-#define SPEED_OFFSET 4.00 //straight (with no lidar control)
-#define L_SPEED_OFFSET 10.0
+#define SPEED_OFFSET 5.00 //straight (with no lidar control)
+#define L_SPEED_OFFSET 6.0
+#define RIGHT_WALL 50.0
+#define LEFT_WALL 60.0 
 
 #define ROW 6  //number of row and col to print out = num of cells + 1
 #define COL 10
@@ -179,12 +181,12 @@ double sumError = 0.0;
 
 //-------------------PID Parameters---------------------//
 // Constants for Lidar
-double K_p_lidar = 0.8;
-double K_d_lidar = 0.05;
+double K_p_lidar = 1.25;
+double K_d_lidar = 0.35;
 
 // Constants for Encoder
 double K_p_encoder = 0.07;
-double K_d_encoder = 0.03;
+double K_d_encoder = 0.04;
 double K_i_encoder = 0.01;
 //-----------------------------------------------------//
 
@@ -258,7 +260,7 @@ void robotForward(float distance, float setSpeedPerc)
 
   while (abs(eCountR) < targetCount)
   {
-    motorControl(1,0,rightPWM,leftPWM);
+    motorControl(1,0,rightPWM,leftPWM+offset);
 
     // Error count from encoder 'ticks'
     lDiff = (abs(eCountL) - prevlCount);
@@ -272,13 +274,9 @@ void robotForward(float distance, float setSpeedPerc)
 
     if ((lidarOne.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT && lidarTwo.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT))
     {
-        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 5.0);
+        error_P_lidar = (lidarOne.readRangeSingleMillimeters() - lidarTwo.readRangeSingleMillimeters() - 10.0);
         error_D_lidar = error_P_lidar - prev_error_lidar;
   
-        //K_p and K_d (for lidar)  
-        totalError = (K_p_lidar * error_P_lidar) + (K_d_lidar * error_D_lidar);
-        prev_error_lidar = error_P_lidar;
-
         // left of a cell
         if (lidarOne.readRangeSingleMillimeters() > lidarTwo.readRangeSingleMillimeters())
         {
@@ -287,8 +285,8 @@ void robotForward(float distance, float setSpeedPerc)
 
           if (leftPWM > setSpeedPerc + L_SPEED_OFFSET || rightPWM > setSpeedPerc + L_SPEED_OFFSET)
           { 
-            leftPWM = setSpeedPerc + L_SPEED_OFFSET*1.25;
-            rightPWM = setSpeedPerc + L_SPEED_OFFSET*1.25; 
+            leftPWM = setSpeedPerc + L_SPEED_OFFSET*1.20;
+            rightPWM = setSpeedPerc + L_SPEED_OFFSET*0.80; 
           }
         }
         //right of a cell
@@ -299,12 +297,94 @@ void robotForward(float distance, float setSpeedPerc)
 
           if (leftPWM >= setSpeedPerc + L_SPEED_OFFSET || rightPWM >= setSpeedPerc + L_SPEED_OFFSET)
           {
-            leftPWM = setSpeedPerc + L_SPEED_OFFSET*2.5;
-            rightPWM = setSpeedPerc + L_SPEED_OFFSET*2.5; 
+            leftPWM = setSpeedPerc + L_SPEED_OFFSET*0.80;
+            rightPWM = setSpeedPerc + L_SPEED_OFFSET*1.20; 
           }
         }    
      }
 
+    //if wall on right but not on left
+    else if ((lidarOne.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT && lidarTwo.readRangeSingleMillimeters() > LIDAR_MAX_SETPOINT))
+    { 
+        
+        error_P_lidar = RIGHT_WALL - (lidarOne.readRangeSingleMillimeters());
+        error_D_lidar = error_P_lidar - prev_error_lidar;
+  
+        //K_p and K_d (for lidar)  
+        totalError = (K_p_lidar * error_P_lidar) + (K_d_lidar * error_D_lidar);
+        prev_error_lidar = error_P_lidar;
+
+        if (lidarOne.readRangeSingleMillimeters() > RIGHT_WALL) // too far from right
+        {
+          
+          leftPWM += totalError;
+          rightPWM -= totalError;
+
+          if (leftPWM > setSpeedPerc + L_SPEED_OFFSET || rightPWM > setSpeedPerc + L_SPEED_OFFSET)
+          { 
+            leftPWM = setSpeedPerc + L_SPEED_OFFSET*1.20;
+            rightPWM = setSpeedPerc + L_SPEED_OFFSET*0.80; 
+          }
+          
+        }
+
+        if (lidarOne.readRangeSingleMillimeters() < RIGHT_WALL) // too close to right
+        {
+          
+          leftPWM -= totalError;
+          rightPWM += totalError;
+
+          if (leftPWM > setSpeedPerc + L_SPEED_OFFSET || rightPWM > setSpeedPerc + L_SPEED_OFFSET)
+          { 
+            leftPWM = setSpeedPerc + L_SPEED_OFFSET*0.80;
+            rightPWM = setSpeedPerc + L_SPEED_OFFSET*1.20; 
+          }
+          
+        }
+
+    }
+
+    //if wall on left but not on right
+    else if ((lidarOne.readRangeSingleMillimeters()> LIDAR_MAX_SETPOINT && lidarTwo.readRangeSingleMillimeters() < LIDAR_MAX_SETPOINT))
+    { 
+        
+        error_P_lidar = LEFT_WALL - (lidarTwo.readRangeSingleMillimeters());
+        error_D_lidar = error_P_lidar - prev_error_lidar;
+  
+        //K_p and K_d (for lidar)  
+        totalError = (K_p_lidar * error_P_lidar) + (K_d_lidar * error_D_lidar);
+        prev_error_lidar = error_P_lidar;
+
+        if (lidarTwo.readRangeSingleMillimeters() > LEFT_WALL) // too far from left
+        {
+          
+          leftPWM -= totalError;
+          rightPWM += totalError;
+
+          if (leftPWM > setSpeedPerc + L_SPEED_OFFSET || rightPWM > setSpeedPerc + L_SPEED_OFFSET)
+          { 
+            leftPWM = setSpeedPerc + L_SPEED_OFFSET*0.80;
+            rightPWM = setSpeedPerc + L_SPEED_OFFSET*1.20; 
+          }
+          
+        }
+
+        if (lidarTwo.readRangeSingleMillimeters() < LEFT_WALL) // too close to left
+        {
+          
+          leftPWM += totalError;
+          rightPWM -= totalError;
+
+          if (leftPWM > setSpeedPerc + L_SPEED_OFFSET || rightPWM > setSpeedPerc + L_SPEED_OFFSET)
+          { 
+            leftPWM = setSpeedPerc + L_SPEED_OFFSET*1.20;
+            rightPWM = setSpeedPerc + L_SPEED_OFFSET*0.80; 
+          }
+          
+        }
+    }
+
+    // no walls
     else {
       
       double e_error = (lDiff - rDiff); //encoder error between left and right wheel
@@ -332,6 +412,7 @@ void robotForward(float distance, float setSpeedPerc)
       prevrCount = abs(eCountR);
   }    
   robotStop();
+  totalError = 0;
   delay(10);
   resetAllEncoders();
 }
@@ -355,7 +436,7 @@ void robotTurn(int directionVal)
   {
     //Right + and Left -
 
-    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.55)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/3.60)
     {
       motorControl(1,1,setSpeedPerc,setSpeedPerc);    
     }
@@ -371,7 +452,7 @@ void robotTurn(int directionVal)
     //-ve so turn to right (CW)
     //Right - and Left +
 
-    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.80)
+    while (abs(eCountR) <= COUNT_PER_REV_TURN/2.90)
     {
       motorControl(0,0,setSpeedPerc,setSpeedPerc);  
     }
