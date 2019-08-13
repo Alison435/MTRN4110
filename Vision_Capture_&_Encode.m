@@ -1,48 +1,26 @@
-%% Code to be used for Vision Parts 1-4
-% Uses color threshold to locate bot
 close all; clear all; warning off;
 
 maze_image = webcam('Logitech BRIO');
-% % maze_image = webcam('USB2.0 HD UVC WebCam');
 maze_image.Resolution = ('1920x1080');
-% maze_image.Exposure=-5;
-% maze_image.Contrast= 80 ;
-% maze_image.Saturation=100;
-% maze_image.WhiteBalance=3000;
 mazeCaptureRaw = snapshot(maze_image);
 
 %% 1. Take an image of the maze and display it on the screen
-% mazeCaptureRaw = imread('Maze & Robot Image_07_15_13_03_07.jpg');
-% mazeCaptureRaw =  imread('Maze & Robot Image_07_10_14_56_03.jpg');
-% mazeCaptureRaw = imread('JamesBotWest.jpg');
-% mazeCaptureRaw = imread('JamesBotWest2.jpg');
-% mazeCaptureRaw = imread('JamesBotNorth.jpg');
-% mazeCaptureRaw = imread('JamesBotEast.jpg');
-% mazeCaptureRaw = imread('JamesBotSouthEast.jpg');
-% mazeCaptureRaw = imread('JamesBotNorthWest.jpg');
-% mazeCaptureRaw = imread('Maze & Robot Image_07_22_13_18_03.jpg');%West
-% mazeCaptureRaw = imread('Maze & Robot Image_07_22_13_18_23.jpg');%North
-% mazeCaptureRaw = imread('Maze & Robot Image_07_22_13_18_43.jpg');
-
-
-
 mazeImageResize=imresize(mazeCaptureRaw,[1080,1920]);
-% mazeCapture = imcrop(mazeImageResize,[19 32 1858 1038]);
 mazeCapture = imcrop(mazeImageResize,[19 32 1863 1038]);
 mazeGRAY=rgb2gray(mazeCapture);
-imshow(mazeCapture);hold on
 
 
 %% 2. Extract the maze layout and overlay it onto the image in RED colour
 % Detects bot and masks it out for edge detection
-[blueBW,maskedBlueImage] = blueMask(mazeCapture);
-blueBox = regionprops(maskedBlueImage, 'Centroid', 'BoundingBox');
-frontCentroids = cat(1,blueBox.Centroid);
-FrontCentre = [nanmean(frontCentroids(:,1)),nanmean(frontCentroids(:,2))];
 
 [greenBW,maskedGreenImage] = greenMask(mazeCapture);
 greenBox = regionprops(maskedGreenImage, 'Centroid', 'BoundingBox');
-backCentroids = cat(1,greenBox.Centroid);
+frontCentroids = cat(1,greenBox.Centroid);
+FrontCentre = [nanmean(frontCentroids(:,1)),nanmean(frontCentroids(:,2))];
+
+[blueBW,maskedBlueImage] = blueMask(mazeCapture);
+blueBox = regionprops(maskedBlueImage, 'Centroid', 'BoundingBox');
+backCentroids = cat(1,blueBox.Centroid);
 BackCentre = [nanmean(backCentroids(:,1)),nanmean(backCentroids(:,2))];
 
 botCentre=[(FrontCentre(1)+BackCentre(1))/2,(FrontCentre(2)+BackCentre(2))/2];
@@ -56,17 +34,11 @@ elseif (botCentre(1) <196 && botCentre(2) > 842)
     robotMask=regionfill (mazeGRAY,[22 194 194 22 22],[838 838 1010 1010 838]);
 elseif (botCentre(1) > 1650 && botCentre(2) > 850) 
     robotMask=regionfill (mazeGRAY,[1658 1842 1842 1658 1658],[850 850 1010 1010 850]);
-else
-    robotMask=regionfill(mazeGRAY,[botCentre(1)-50 botCentre(1)-50 botCentre(1)+90 botCentre(1)+90  botCentre(1)-50 ],...
-                    [botCentre(2)-50 botCentre(2)+50 botCentre(2)+50 botCentre(2)-50 botCentre(2)-50]);
 end
-% figure;imshow(robotMask),title('RobotMasked and Position'), hold on
-% plot(FrontCentre(1),FrontCentre(2),'b*');
-% plot(BackCentre(1),BackCentre(2),'r*');
 
 %%
 % Masks cell centres and side faces
-robotMask3=regionfill(robotMask,[13 13+185 13+185 13 13], [15 15 15+184 15+184 15]);
+robotMask3=regionfill(mazeGRAY,[13 13+185 13+185 13 13], [15 15 15+184 15+184 15]);
 robotMask4=regionfill(robotMask3,[210 210+190 210+190 210 210], [13 13 13+190 13+190 13]);
 robotMask5=regionfill(robotMask4,[416 416+190 416+190 416 416], [15 15 15+190 15+190 15]);
 robotMask6=regionfill(robotMask5,[627 627+195 627+195 627 627], [15 15 15+190 15+190 15]);
@@ -115,9 +87,8 @@ robotMask44=regionfill(robotMask43,[1038 1038+190 1038+190 1038 1038], [836 836 
 robotMask45=regionfill(robotMask44,[1247 1247+190 1247+190 1247 1247], [836 836 836+190 836+190 836]);
 robotMask46=regionfill(robotMask45,[1457 1457+190 1457+190 1457 1457], [836 836 836+190 836+190 836]);
 robotMask47=regionfill(robotMask46,[1663 1663+185 1663+185 1663 1663], [836 836 836+190 836+190 836]);
-
+figure;imshow(robotMask47);
 %%
-% mazeGRAY = rgb2gray(mazeCapture);
 se = strel('square',1);
 se2 = strel('line',1,2);
 se3 = strel('line',2,1);
@@ -136,32 +107,27 @@ a6=imfill(a6,4);
 a6=imclose(a6,se4);
 a7=a6>70;
 [centre, radii]=imfindcircles(a7,[6 20]);
-% figure, imshow(mazeCapture),title('Maze Walls'); hold on;
+figure, imshow(mazeCapture),title('Maze Walls'); hold on;
 
-% visboundaries(a7,'Color','r');
-% rectangle('position',[7 7 1850 1027],'EdgeColor','red','LineWidth',3);
-% plot(FrontCentre(1),FrontCentre(2),'k*');
-% plot(BackCentre(1),BackCentre(2),'k*');
+visboundaries(a7,'Color','r');
+rectangle('position',[7 7 1850 1027],'EdgeColor','red','LineWidth',3);
 
-% viscircles(centre,radii,'Color','k','LineWidth',4);
-
-% hold off;
 %% 3. Detect the location of the robot and indicate it on the image
-if (botCentre(1)< 203)
+if (BackCentre(1)< 203)
     col = 0;
-elseif (botCentre(1)>203 && botCentre(1)<409)
+elseif (BackCentre(1)>203 && BackCentre(1)<409)
     col = 1;
-elseif (botCentre(1)>409 && botCentre(1)<613) 
+elseif (BackCentre(1)>409 && BackCentre(1)<613) 
     col = 2;
-elseif (botCentre(1)>613 && botCentre(1)<826)
+elseif (BackCentre(1)>613 && BackCentre(1)<826)
     col = 3;
-elseif (botCentre(1)>826 && botCentre(1) < 1031)
+elseif (BackCentre(1)>826 && BackCentre(1) < 1031)
     col = 4;
-elseif (botCentre(1)>1031 && botCentre(1) < 1246)
+elseif (BackCentre(1)>1031 && BackCentre(1) < 1246)
     col = 5;
-elseif (botCentre(1)>1246 && botCentre(1) < 1438)
+elseif (BackCentre(1)>1246 && BackCentre(1) < 1438)
     col = 6;
-elseif (botCentre(1)>1438 && botCentre(1) < 1662)
+elseif (BackCentre(1)>1438 && BackCentre(1) < 1662)
     col = 7;
 else
     col = 8;
@@ -207,9 +173,6 @@ viscircles(botCentre,80,'Color','c');
 % imshow(dir);
 
 %% 5. Automatically encode the layout of the maze and the starting location and heading of the robot.
-% 1 number for heading
-% 2 numbers for row/col
-% 2 separate strings or vertical and horizontal walls
 
 se2 = strel('line',20,90);
 se3 = strel('line',20,0);
@@ -227,7 +190,7 @@ horSegment=170;
 vertSegment=175;
 XrowPixel=[23;225;437;639;850;1057;1263;1477;1683;1869];
 YrowPixel=[11;212;418;625;829;1029];
-XcolPixel= [3; 199; 413; 617; 827; 1031; 1233; 1445; 1653; 1853];
+XcolPixel= [3; 210; 413; 622; 827; 1031; 1233; 1445; 1653; 1853];
 YcolPixel= [37; 239; 447; 655; 861];
 
 %Vertical array
@@ -275,37 +238,21 @@ HoriString(strfind(HoriString, '[')) = [];
 HoriString(strfind(HoriString, ']')) = [];
 HoriString(strfind(HoriString, ';')) = [];
 HoriString=append(HoriString,newLine);
-% vertWall='10100000011010000001101010010110101001111010001001\n';
-% horiWall='111111111011111111101000010010100001101011100111111111\n';
-%% exports variables to txt file
 
 fid = fopen('bot.txt','wt');
 fprintf(fid, '%s\n%s\n%d\n%d\n%d\n0', VertString, HoriString, direction, row, col);
 fclose(fid);
 
-%%
-% function poleRemove(centre, radii, image)
-% kernel=zeros(10,10);
-%     for i=1:numel(radii)
-%         for j=1:10
-%         image(round(centre(i,1)-j),round(centre(i,2)-j))=false;
-%         image(round(centre(i,1)+j),round(centre(i,2)-j))=false;
-%         image(round(centre(i,1)-j),round(centre(i,2)+j))=false;
-%         image(round(centre(i,1)+j),round(centre(i,2)+j))=false;
-%         end
-%     end
-% end
-
 function direction = heading(FrontCentre,BackCentre)
     
     if (abs(FrontCentre(1) - BackCentre(1))<30 && (FrontCentre(2) < BackCentre(2)))
-        direction = 2;
-    elseif ((FrontCentre(1) > BackCentre(1)) && abs(FrontCentre(2) - BackCentre(2))<30)
-        direction = 3;
-    elseif (abs(FrontCentre(1) - BackCentre(1))<30 && (FrontCentre(2) > BackCentre(2)))
         direction = 0;
-    elseif ((FrontCentre(1) < BackCentre(1)) && abs(FrontCentre(2) - BackCentre(2))<30)
+    elseif ((FrontCentre(1) > BackCentre(1)) && abs(FrontCentre(2) - BackCentre(2))<30)
         direction = 1;
+    elseif (abs(FrontCentre(1) - BackCentre(1))<30 && (FrontCentre(2) > BackCentre(2)))
+        direction = 2;
+    elseif ((FrontCentre(1) < BackCentre(1)) && abs(FrontCentre(2) - BackCentre(2))<30)
+        direction = 3;
     end
 end
 
@@ -315,40 +262,16 @@ function [blueBW,maskedBlueImage] = blueMask(RGB)
 I = rgb2hsv(RGB);
 
 % Define thresholds for channel 1 based on histogram settings
-% channel1Min = 0.610;
-% channel1Max = 0.620;
-channel1Min = 0.603;%North
-% channel1Max = 0.630;%North
-channel1Max = 0.635;%North
-% channel1Min = 0.599; %West TopRight
-% channel1Max = 0.643;%West TopRight
+channel1Min = 0.603;
+channel1Max = 0.635;
 
 % Define thresholds for channel 2 based on histogram settings
-
-% channel2Min = 0.788;
-% channel2Min = 0.925;
-% channel2Min = 0.942;
-% channel2Max = 1.000;
-
-% channel2Min = 0.777;%North
-% channel2Max = 1.000;%North
-% channel2Min = 0.677;%West TopRight
-% channel2Max = 0.984;%West TopRight
 channel2Min = 0.650;
 channel2Max = 0.926;
 
 % Define thresholds for channel 3 based on histogram settings
-% channel3Min = 0.169;
 channel3Min = 0.388;
 channel3Max = 0.835;
-% channel3Min = 0.608;
-% channel3Max = 0.224;
-% channel3Max = 0.471;
-% channel3Max = 0.929;
-% channel3Min = 0.443;%North
-% channel3Max = 0.831;%North
-% channel3Min = 0.447;%West TopRight
-% channel3Max = 0.914;%West TopRight
 
 % Create mask based on chosen histogram thresholds
 sliderBW = ( (I(:,:,1) >= channel1Min) & (I(:,:,1) <= channel1Max) ) & ...
@@ -371,21 +294,14 @@ I = rgb2hsv(RGB);
 
 % Define thresholds for channel 1 based on histogram settings
 channel1Min = 0.474;
-% channel1Max = 0.486;
 channel1Max = 0.518;
 
 % Define thresholds for channel 2 based on histogram settings
 channel2Min = 0.669;
-% channel2Min = 0.813;
-% channel2Min = 0.853;
-% channel2Min = 0.918;
 channel2Max = 1.000;
 
 % Define thresholds for channel 3 based on histogram settings
 channel3Min = 0.533;
-% channel3Min = 0.612;
-% channel3Max = 0.647;
-% channel3Max = 0.667;
 channel3Max = 0.749;
 
 % Create mask based on chosen histogram thresholds
