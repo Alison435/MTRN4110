@@ -5,8 +5,8 @@ axe1 = axes ();
 axe1.Parent = fig1;
 
 %% Comment this section out when using a pre-recorded video
-vid = videoinput('winvideo', 1, 'YUY2_1280x720')
-% vid = videoinput('winvideo', 2, 'YUY2_1280x720');
+% vid = videoinput('winvideo', 1, 'YUY2_1280x720')
+vid = videoinput('winvideo', 2, 'YUY2_1280x720');
 set(vid, 'ReturnedColorspace', 'rgb');
 vid.SelectedSourceName = 'input1';
 src = getselectedsource(vid);
@@ -28,30 +28,26 @@ src = getselectedsource(vid);
 % src.Focus=0;
 src2=src;
 % Enlarge figure to full screen.
-set(gcf, 'units','normalized','outerposition',[0 0 1 1]);
+% set(gcf, 'units','normalized','outerposition',[0 0 1 1]);
+MazeRGB=getsnapshot(vid); %to be used when using webcam to take video
 
-%%
-% % open(vid)
-% mov = VideoWriter('maze.avi','Motion JPEG AVI');   % Create a new AVI file
-% mov.Quality=50;
-% mov.FrameRate=5;
-% mov.Height;
-% mov.Width;
-% open(mov)
-%%
+J= imshow(MazeRGB);
+hold off;
+
 iFrame = 1;
 while (1)
-MazeRGB=getsnapshot(vid); %to be used when using webcam to take video
-imshow(MazeRGB); hold on
+MazeRGB=getsnapshot(vid);
+set(J,'Cdata',MazeRGB);
+hold on;
 
+    [blueBW,maskedBlueImage] = blueMask(MazeRGB);
+    blueBox = regionprops(maskedBlueImage, 'Centroid', 'BoundingBox');
+    frontCentroids = cat(1,blueBox.Centroid);
 
-[blueBW,maskedBlueImage] = blueMask(MazeRGB);
-blueBox = regionprops(maskedBlueImage, 'Centroid', 'BoundingBox');
-frontCentroids = cat(1,blueBox.Centroid);
+    [greenBW,maskedGreenImage] = greenMask(MazeRGB);
+    greenBox = regionprops(maskedGreenImage, 'Centroid', 'BoundingBox');
+    backCentroids = cat(1,greenBox.Centroid);
 
-[greenBW,maskedGreenImage] = greenMask(MazeRGB);
-greenBox = regionprops(maskedGreenImage, 'Centroid', 'BoundingBox');
-backCentroids = cat(1,greenBox.Centroid);
     if isempty(blueBW) < 1
         FrontCentre = [nanmean(frontCentroids(:,1)),nanmean(frontCentroids(:,2))];
         BackCentre = [nanmean(backCentroids(:,1)),nanmean(backCentroids(:,2))];
@@ -60,13 +56,20 @@ backCentroids = cat(1,greenBox.Centroid);
         hold on
         RobotFront(iFrame,:)= [FrontCentre(1) FrontCentre(2)];
         plot(RobotFront(:,1),RobotFront(:,2),'r*-');%plots trajectory or car
-        viscircles(FrontCentre,80,'Color','c')
-        hold on
+        hold on;
         iFrame = iFrame + 1;
     end
 
 end
-   
+
+% Image capture function - saves image in current directory
+function capture_image (vid,name)
+ 	mazeCapture = snapshot(vid);
+    imshow(mazeCapture);
+    imwrite(mazeCapture, [name, datestr(datetime('now'),'_mm_dd_HH_MM_SS'), '.jpg']);
+    disp([name ' captured']);
+end
+
 function [blueBW,maskedBlueImage] = blueMask(RGB)
 
 % Convert RGB image to chosen color space
@@ -115,6 +118,7 @@ channel2Max = 1.000;
 % Define thresholds for channel 3 based on histogram settings
 channel3Min = 0.533;
 channel3Max = 0.749;
+
 
 % Create mask based on chosen histogram thresholds
 sliderBW = (I(:,:,1) >= channel1Min ) | (I(:,:,1) <= channel1Max) & ...
